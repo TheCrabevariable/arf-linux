@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── arf-linux installer (runs from live ISO) ──────────────────
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
+info()  { printf "${CYAN}::${NC} %s\n" "$*"; }
+ok()    { printf "${GREEN}==>${NC} %s\n" "$*"; }
+err()   { printf "${RED}==>${NC} %s\n" "$*" >&2; exit 1; }
+
+clear
+echo "============================================"
+echo "         arf-linux Installer"
+echo "============================================"
+echo ""
+
+# ── Detect arf-linux source
+ARF_SRC="/opt/arf-linux"
+if [ ! -d "$ARF_SRC" ]; then
+  err "arf-linux source not found at /opt/arf-linux. Rebuild the ISO with the source bundled."
+fi
+
+# ── Collect info ─────────────────────────────────────────────
+echo "Available disks:"
+lsblk -d -o NAME,SIZE,MODEL | grep -v loop
+echo ""
+
+echo -n "Install to which disk (e.g. /dev/sda): "; read -r DISK
+[ -z "$DISK" ] && err "Disk required"
+[ ! -b "$DISK" ] && err "Not a block device: $DISK"
+
+# ── WiFi setup ───────────────────────────────────────────────
+if command -v nmcli &>/dev/null && nmcli radio wifi | grep -q enabled; then
+  echo ""
+  info "Scanning for WiFi networks..."
+  nmcli dev wifi list --rescan yes 2>/dev/null | head -40 || true
+  echo ""
+  echo -n "Connect to WiFi? (SSID, or leave blank to skip): "; read -r WIFI_SSID
+  if [ -n "$WIFI_SSID" ]; then
+    echo -n "WiFi password: "; read -rs WIFI_PASS; echo ""
+    info "Connecting to ${WIFI_SSID}..."
+    nmcli dev wifi connect "$WIFI_SSID" password "$WIFI_PASS" 2>&1 || err "Failed to connect to WiFi"
+    ok "Connected to ${WIFI_SSID}"
+  fi
+else
+  info "No WiFi device detected — will use Ethernet (if available)"
+fi
+
+echo ""
+echo -n "Hostname: "; read -r HOSTNAME; [ -z "$HOSTNAME" ] && err "Hostname required"
+echo -n "Username: "; read -r USERNAME; [ -z "$USERNAME" ] && err "Username required"
+echo -n "Password: "; read -rs PASSWORD; echo ""; [ -z "$PASSWORD" ] && err "Password required"
+echo -n "Timezone (e.g. America/New_York): "; read -r TIMEZONE; [ -z "$TIMEZONE" ] && err "Timezone required"
+
+echo ""
+echo "⚠️  THIS WILL WIPE ALL DATA ON $DISK"
+echo -n "Type YES to continue: "; read -r confirm
+[ "$confirm" != "YES" ] && err "Aborted"
+echo ""
+
+# ── Detect SSD ───────────────────────────────────────────────
+IS_SSD=false
+DISK_NAME="$(basename "$DISK")"
+if [ -f "/sys/block/$DISK_NAME/queue/rotational" ]; then
+  [ "$(cat "/sys/block/$DISK_NAME/queue/rotational")" = "0" ] && IS_SSD=true
+fi
+
+# ── Generate archinstall configs ──────────────────────────────
+info "Generating archinstall configuration..."
+
+mkdir -p /tmp/arf-config
+
+cat > /tmp/arf-config/user_configuration.json <<EOF
+{
+  "additional-repositories": [],
+  "archinstall-language": "English",
+  "audio_config": { "audio": "pipewire" },
+  "bootloader": "grub",
+  "config_version": 2,
+  "debug": false,
+  "disk_config": {
+    "config_type": "default_layout",
+    "device": "${DISK}",
+    "encryption": null
+  },
+  "hostname": "${HOSTNAME}",
+  "kernels": ["linux"],
+  "locale_config": {
+    "kb_layout": "us",
+    "sys_enc": "UTF-8",
+    "sys_layout": "en_US.UTF-8"
+  },
+  "mirror_config": {
+    "mirror_regions": { "Worldwide": ["auto"] }
+  },
+  "network_config": { "type": "nm" },
+  "ntp": true,
+  "packages": ["base-devel", "git", "btop"],
+  "profile_config": { "profile": null },
+  "script": "guided",
+  "silent": true,
+  "swap": true,
+  "timezone": "${TIMEZONE}",
+  "version": 2.5,
+  "users": {
+    "${USERNAME}": {
+      "password": "${PASSWORD}",
+      "sudo": true
+    }
+  }
+}
+EOF
+
+cat > /tmp/arf-config/user_credentials.json <<EOF
+{
+  "root": { "password": "${PASSWORD}" },
+  "users": {
+    "${USERNAME}": { "password": "${PASSWORD}" }
+  }
+}
+EOF
+
+# ── Run archinstall ───────────────────────────────────────────
+info "Running archinstall..."
+cd /tmp/arf-config
+archinstall --config user_configuration.json \
+            --creds user_credentials.json \
+            --silent 2>&1 | tee /tmp/arf-install.log
+
+if [ $? -ne 0 ]; then
+  err "archinstall failed. Check /tmp/arf-install.log"
+fi
+ok "Base system installed"
+
+# ── Persist WiFi connection to installed system ──────────────
+if [ -n "${WIFI_SSID:-}" ] && [ -d /mnt/etc/NetworkManager/system-connections ]; then
+  info "Copying WiFi connection to installed system..."
+  WIFI_UUID="$(nmcli -t -f UUID,DEVICE,TYPE conn show --active 2>/dev/null | grep -F ':wifi' | cut -d: -f1 | head -1)" || true
+  nmcli connection export "${WIFI_UUID:-$WIFI_SSID}" /tmp/arf-wifi.nmconnection 2>/dev/null || true
+  if [ -f /tmp/arf-wifi.nmconnection ]; then
+    cp /tmp/arf-wifi.nmconnection /mnt/etc/NetworkManager/system-connections/
+    chown root:root /mnt/etc/NetworkManager/system-connections/*.nmconnection
+    chmod 600 /mnt/etc/NetworkManager/system-connections/*.nmconnection
+    ok "WiFi connection saved to installed system"
+  fi
+fi
+
+# ── Copy arf-linux to installed system ───────────────────────
+info "Copying arf-linux to installed system..."
+mkdir -p /mnt/home/${USERNAME}/arf-linux
+cp -r "$ARF_SRC"/* /mnt/home/${USERNAME}/arf-linux/
+chown -R 1000:1000 /mnt/home/${USERNAME}/arf-linux 2>/dev/null || true
+
+# ── Set up auto-stage2 on first boot ──────────────────────────
+info "Setting up auto-stage2 on first boot..."
+mkdir -p /mnt/etc/systemd/system
+
+# Write username for stage2 to use
+echo "USERNAME=${USERNAME}" > /mnt/etc/arf-linux.env
+
+cat > /mnt/etc/systemd/system/arf-stage2.service <<SERVICE
+[Unit]
+Description=arf-linux stage2 (packages + dotfiles)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/arf-linux.env
+ExecStart=/home/${USERNAME}/arf-linux/install.sh --stage2
+ExecStartPost=/usr/bin/systemctl disable arf-stage2.service
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+mkdir -p /mnt/etc/systemd/system/multi-user.target.wants
+ln -sf /etc/systemd/system/arf-stage2.service /mnt/etc/systemd/system/multi-user.target.wants/arf-stage2.service
+
+# ── Enable fstrim if SSD ─────────────────────────────────────
+if [ "$IS_SSD" = true ]; then
+  info "Enabling fstrim.timer (SSD detected)"
+  ln -sf /usr/lib/systemd/system/fstrim.timer /mnt/etc/systemd/system/timers.target.wants/fstrim.timer 2>/dev/null || true
+fi
+
+# ── Optional stage2 now ──────────────────────────────────────
+echo ""
+echo -n "Run stage2 (packages + dotfiles) now instead of rebooting first? [Y/n]: "; read -r RUN_NOW
+if [ -z "$RUN_NOW" ] || [ "$RUN_NOW" = "y" ] || [ "$RUN_NOW" = "Y" ]; then
+  info "Running stage2 in chroot..."
+  cp /etc/resolv.conf /mnt/etc/resolv.conf 2>/dev/null || true
+  arch-chroot /mnt bash -c "
+    export USERNAME=$USERNAME HOME=/home/$USERNAME
+    bash /home/$USERNAME/arf-linux/install.sh --stage2
+  " 2>&1 | tee /tmp/arf-stage2.log || true
+  ok "Stage2 complete (non-fatal errors logged to /tmp/arf-stage2.log)"
+fi
+
+# ── Done ─────────────────────────────────────────────────────
+ok "Installation complete! Rebooting in 5 seconds..."
+sleep 5
+reboot

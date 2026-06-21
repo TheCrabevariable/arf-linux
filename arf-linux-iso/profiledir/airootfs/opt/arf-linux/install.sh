@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── arf-linux ──────────────────────────────────────────────────
+# Opinionated Arch Linux installer — like Omarchy, but mine
+# Usage: bash install.sh
+# ────────────────────────────────────────────────────────────────
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
+info()  { printf "${CYAN}::${NC} %s\n" "$*"; }
+ok()    { printf "${GREEN}==>${NC} %s\n" "$*"; }
+err()   { printf "${RED}==>${NC} %s\n" "$*" >&2; exit 1; }
+
+# ── Config ────────────────────────────────────────────────────
+# If running inside the ISO-automated flow, these come from /etc/arf-linux.env.
+# If running manually, they default to the current user.
+USERNAME="${USERNAME:-$USER}"
+
+# ── Stage 1: Live ISO ──────────────────────────────────────────
+stage1() {
+  clear
+  echo "============================================"
+  echo "  arf-linux Stage 1 — archinstall"
+  echo "============================================"
+  echo ""
+  echo "You'll now be guided through archinstall's"
+  echo "interactive setup. Recommended options:"
+  echo ""
+  echo "  • Disk config:  your choice (ext4/btrfs,"
+  echo "                  encryption optional)"
+  echo "  • Filesystem:   ext4 or btrfs"
+  echo "  • Bootloader:   grub"
+  echo "  • Audio:        pipewire"
+  echo "  • Network:      Copy ISO network config"
+  echo "  • User:         create your user with sudo"
+  echo ""
+  echo "After archinstall finishes and you reboot,"
+  echo "run:  bash arf-linux/install.sh --stage2"
+  echo "============================================"
+  echo ""
+
+  # Ensure archinstall is available
+  if ! command -v archinstall &>/dev/null; then
+    info "Installing archinstall..."
+    pacman -Sy --noconfirm archinstall
+  fi
+
+  archinstall
+
+  ok "Stage 1 complete. Reboot, then run: bash arf-linux/install.sh --stage2"
+}
+
+# ── Stage 2: First boot (pkg install) ──────────────────────────
+stage2() {
+  info "Stage 2: Installing packages"
+
+  # Enable multilib
+  if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
+    echo '[multilib]' >> /etc/pacman.conf
+    echo 'Include = /etc/pacman.d/mirrorlist' >> /etc/pacman.conf
+  fi
+
+  pacman -Syu --noconfirm
+
+  # Official packages
+  OFFICIAL=(
+    hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
+    zed steam kitty fastfetch rmpc mpd networkmanager
+    quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
+    bluetui bluez bluez-utils playerctl brightnessctl
+    pipewire pipewire-pulse wireplumber
+  )
+
+  pacman -S --noconfirm --needed "${OFFICIAL[@]}"
+
+  # Install yay for AUR
+  if ! command -v yay &>/dev/null; then
+    info "Installing yay (AUR helper)"
+    sudo -u "$USERNAME" bash -c "
+      cd /tmp
+      git clone https://aur.archlinux.org/yay-bin.git
+      cd yay-bin && makepkg -si --noconfirm
+    "
+  fi
+
+  # AUR packages
+  AUR=(
+    helium-browser-bin
+    animu-bin
+    fren-git
+  )
+
+  sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
+
+  # Enable SDDM
+  systemctl enable sddm
+
+  # Flatpak
+  if ! command -v flatpak &>/dev/null; then
+    info "Installing flatpak..."
+    pacman -S --noconfirm flatpak flatpak-xdg-utils
+  fi
+  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  sudo -u "$USERNAME" flatpak install -y flathub com.vesktop.Vesktop
+  sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl
+
+  # ── Dotfiles ──────────────────────────────────────────────────
+  info "Applying dotfiles..."
+
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  DOTFILES="$SCRIPT_DIR/dotfiles"
+
+  for dir in "$DOTFILES"/*/; do
+    app="$(basename "$dir")"
+    target="$HOME/.config/$app"
+    mkdir -p "$target"
+    cp -r "$dir"/* "$target"/ 2>/dev/null || true
+    ok "Applied config for $app"
+  done
+
+  if [ -f "$DOTFILES/zsh/.zshrc" ]; then
+    cp "$DOTFILES/zsh/.zshrc" "$HOME/.zshrc"
+    ok "Applied config for zsh"
+  fi
+
+  mkdir -p "$HOME/.config/mpd/playlists"
+  touch "$HOME/.config/mpd/database"
+
+  # ── Quickshell config ──────────────────────────────────────────
+  info "Setting up Quickshell..."
+  if [ -d "$HOME/.config/quickshell" ]; then
+    mv "$HOME/.config/quickshell" "$HOME/.config/quickshell.bak"
+  fi
+  git clone --depth 1 https://github.com/doannc2212/quickshell-config.git "$HOME/.config/quickshell"
+  sed -i 's/import "wallpaper"/\/\/import "wallpaper"/' "$HOME/.config/quickshell/shell.qml"
+  sed -i 's/WallpaperManager {/# WallpaperManager {/' "$HOME/.config/quickshell/shell.qml"
+  ok "Quickshell config applied"
+
+  # ── Wallpapers from GitHub ──────────────────────────────────────
+  info "Downloading wallpapers..."
+  WALLPAPER_DIR="$HOME/.config/hypr/wallpaper"
+  mkdir -p "$WALLPAPER_DIR"
+  if [ ! -d "$WALLPAPER_DIR/.git" ]; then
+    git clone --depth 1 https://github.com/TheCrabevariable/Wallpaper.git "$WALLPAPER_DIR-tmp" 2>/dev/null || true
+    if [ -d "$WALLPAPER_DIR-tmp" ]; then
+      sudo mkdir -p /usr/share/sddm/themes/arf
+      sudo cp "$WALLPAPER_DIR-tmp/sddm/Sddm.jpg" /usr/share/sddm/themes/arf/background.jpg 2>/dev/null || true
+      cp "$WALLPAPER_DIR-tmp/hyprlock/hyprlock2.png" "$WALLPAPER_DIR/hyprlock2.png" 2>/dev/null || true
+      cp "$WALLPAPER_DIR-tmp/Kosmos/fren1.png" "$WALLPAPER_DIR/fren1.png" 2>/dev/null || true
+      rm -rf "$WALLPAPER_DIR-tmp"
+      ok "Wallpapers downloaded"
+    else
+      info "Wallpaper repo not accessible — skipping"
+    fi
+  fi
+
+  # ── SDDM theme ──────────────────────────────────────────────────
+  if [ ! -d /usr/share/sddm/themes/sddm-flower-theme ]; then
+    sudo git clone --depth 1 https://github.com/keyitdev/sddm-flower-theme.git /usr/share/sddm/themes/sddm-flower-theme 2>/dev/null || true
+  fi
+  sudo cp /usr/share/sddm/themes/arf/background.jpg /usr/share/sddm/themes/sddm-flower-theme/background.jpg 2>/dev/null || true
+  sudo mkdir -p /etc/sddm.conf.d
+  sudo tee /etc/sddm.conf.d/arf.conf > /dev/null << 'SDDM'
+[Theme]
+Current=sddm-flower-theme
+[Users]
+MaximumUid=60000
+SDDM
+  ok "SDDM configured"
+
+  ok "Stage 2 complete!"
+
+  # If running via the ISO automated flow, reboot automatically
+  if [ -f /etc/arf-linux.env ]; then
+    info "Rebooting in 5 seconds..."
+    sleep 5
+    systemctl reboot
+  else
+    echo "  Reboot to start SDDM and enjoy arf-linux!"
+  fi
+}
+
+# ── Main ───────────────────────────────────────────────────────
+main() {
+  case "${1:-}" in
+    --stage2) stage2 ;;
+    *)        stage1 ;;
+  esac
+}
+
+main "$@"

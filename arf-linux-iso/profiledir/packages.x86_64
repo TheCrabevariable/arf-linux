@@ -1,0 +1,29 @@
+# Base live environment
+archiso
+archinstall
+bash
+btrfs-progs
+coreutils
+dosfstools
+e2fsprogs
+efibootmgr
+git
+grub
+# TUI prompting (whiptail is included in newt)
+iptables-nft
+linux
+linux-firmware
+lvm2
+mdadm
+nano
+networkmanager
+openssh
+parted
+polkit
+sudo
+syslinux
+vim
+iwd
+wpa_supplicant
+xfsprogs
+power-profiles-daemon
