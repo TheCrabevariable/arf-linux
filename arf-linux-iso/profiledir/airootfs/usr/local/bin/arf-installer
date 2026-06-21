@@ -81,14 +81,21 @@ if [ "$FS_CHOICE" = "btrfs" ]; then
   mkfs.fat -F32 "${DISK}1"
   mkfs.btrfs -f "${DISK}2"
   mount "${DISK}2" /mnt
-  btrfs subvolume create /mnt/@
-  btrfs subvolume create /mnt/@home
-  btrfs subvolume create /mnt/@snapshots
-  umount /mnt
-  mount -o subvol=@,compress=zstd "${DISK}2" /mnt
-  mkdir -p /mnt/{home,.snapshots}
-  mount -o subvol=@home,compress=zstd "${DISK}2" /mnt/home
-  mount -o subvol=@snapshots,compress=zstd "${DISK}2" /mnt/.snapshots
+  echo ""
+  echo -n "Create subvolumes (@, @home, @snapshots)? [Y/n]: "; read -r BTRFS_SUBVOL
+  if [ -z "$BTRFS_SUBVOL" ] || [ "$BTRFS_SUBVOL" = "y" ] || [ "$BTRFS_SUBVOL" = "Y" ]; then
+    btrfs subvolume create /mnt/@
+    btrfs subvolume create /mnt/@home
+    btrfs subvolume create /mnt/@snapshots
+    umount /mnt
+    mount -o subvol=@,compress=zstd "${DISK}2" /mnt
+    mkdir -p /mnt/{home,.snapshots}
+    mount -o subvol=@home,compress=zstd "${DISK}2" /mnt/home
+    mount -o subvol=@snapshots,compress=zstd "${DISK}2" /mnt/.snapshots
+  else
+    umount /mnt
+    mount -o compress=zstd "${DISK}2" /mnt
+  fi
 else
   parted -s "$DISK" mkpart primary ext4 1025MiB 100%
   info "Formatting partitions..."
