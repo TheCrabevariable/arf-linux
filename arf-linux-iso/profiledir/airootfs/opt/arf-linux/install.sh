@@ -54,6 +54,11 @@ stage1() {
 stage2() {
   info "Stage 2: Installing packages"
 
+  # Tweak pacman.conf
+  sed -i 's/^#Color/Color/; s/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
+  grep -q '^ILoveCandy' /etc/pacman.conf || sed -i '/^Color/a ILoveCandy' /etc/pacman.conf
+  grep -q '^VerbosePkgLists' /etc/pacman.conf || sed -i '/^Color/a VerbosePkgLists' /etc/pacman.conf
+
   # Enable multilib
   if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
     echo '[multilib]' >> /etc/pacman.conf
