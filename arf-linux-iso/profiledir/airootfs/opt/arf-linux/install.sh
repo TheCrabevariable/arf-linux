@@ -73,10 +73,10 @@ stage2() {
     zed steam kitty fastfetch rmpc mpd networkmanager
     quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl
-    pipewire pipewire-pulse wireplumber
+    pipewire pipewire-pulse wireplumber power-profiles-daemon
   )
 
-  pacman -S --noconfirm --needed "${OFFICIAL[@]}"
+  pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
 
   # Install yay for AUR
   if ! command -v yay &>/dev/null; then
@@ -106,7 +106,6 @@ stage2() {
     pacman -S --noconfirm flatpak flatpak-xdg-utils
   fi
   flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  sudo -u "$USERNAME" flatpak install -y flathub com.vesktop.Vesktop
   sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl
 
   # ── Dotfiles ──────────────────────────────────────────────────
@@ -139,6 +138,17 @@ stage2() {
   git clone --depth 1 https://github.com/doannc2212/quickshell-config.git "$HOME/.config/quickshell"
   sed -i 's/import "wallpaper"/\/\/import "wallpaper"/' "$HOME/.config/quickshell/shell.qml"
   sed -i 's/WallpaperManager {/# WallpaperManager {/' "$HOME/.config/quickshell/shell.qml"
+
+  # Patch Monitor Manager: keyword doesn't work with Lua config parser
+  # Replace buildMonitorArg + apply with persistToFile + hyprctl reload
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  QS_PATCH="$SCRIPT_DIR/dotfiles/quickshell-patch"
+  if [ -f "$QS_PATCH/MonitorService.qml" ]; then
+    cp "$QS_PATCH/MonitorService.qml" "$HOME/.config/quickshell/monitor-manager/MonitorService.qml"
+  fi
+  if [ -f "$QS_PATCH/MonitorManager.qml" ]; then
+    cp "$QS_PATCH/MonitorManager.qml" "$HOME/.config/quickshell/monitor-manager/MonitorManager.qml"
+  fi
   ok "Quickshell config applied"
 
   # ── Wallpapers from GitHub ──────────────────────────────────────
@@ -172,6 +182,20 @@ Current=sddm-flower-theme
 MaximumUid=60000
 SDDM
   ok "SDDM configured"
+
+  # ── GRUB config ──────────────────────────────────────────────────
+  info "Configuring GRUB..."
+  cp "$SCRIPT_DIR/dotfiles/grub/fgrub.png" /boot/grub/
+  cp "$SCRIPT_DIR/dotfiles/grub/theme.txt" /boot/grub/
+  sed -i 's/^#GRUB_BACKGROUND=/GRUB_BACKGROUND=\/boot\/grub\/fgrub.png/' /etc/default/grub
+  sed -i 's/^#GRUB_THEME=/GRUB_THEME=\/boot\/grub\/theme.txt/' /etc/default/grub
+  grep -q '^GRUB_THEME=' /etc/default/grub || echo 'GRUB_THEME=/boot/grub/theme.txt' >> /etc/default/grub
+  grep -q '^GRUB_BACKGROUND=' /etc/default/grub || echo 'GRUB_BACKGROUND=/boot/grub/fgrub.png' >> /etc/default/grub
+  grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=1920x1080,auto' >> /etc/default/grub
+  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"/' /etc/default/grub
+  sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub || true
+  grub-mkconfig -o /boot/grub/grub.cfg
+  ok "GRUB configured"
 
   ok "Stage 2 complete!"
 

@@ -1,0 +1,23 @@
+# Tokyo Night GRUB Theme
+title-text: ""
+title-font: "Hack Regular 12"
+title-color: "#7aa2f7"
+title-align: "right"
+desktop-image: "fgrub.png"
+desktop-color: "#1a1b26"
+terminal-font: "Hack Regular 12"
+
++ boot_menu {
+  left = 50%
+  top = 20%
+  width = 45%
+  height = 60%
+  item_color = "#a9b1d6"
+  selected_item_color = "#7aa2f7"
+  item_height = 32
+  item_padding = 8
+  item_spacing = 4
+  item_font = "Hack Regular 12"
+  selected_item_font = "Hack Bold 12"
+  scrollbar = false
+}

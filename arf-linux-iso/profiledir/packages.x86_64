@@ -9,6 +9,7 @@ e2fsprogs
 efibootmgr
 git
 grub
+os-prober
 # TUI prompting (whiptail is included in newt)
 iptables-nft
 linux

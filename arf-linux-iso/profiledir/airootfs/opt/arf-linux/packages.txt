@@ -36,6 +36,6 @@ yt-dlp
 flatpak
 flatpak-xdg-utils
 animu-bin
+vesktop-bin
 fren-git
 # flatpak apps (installed separately):
-# com.vesktop.Vesktop

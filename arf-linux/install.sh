@@ -76,7 +76,7 @@ stage2() {
     pipewire pipewire-pulse wireplumber power-profiles-daemon
   )
 
-  pacman -S --noconfirm --needed "${OFFICIAL[@]}"
+  pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
 
   # Install yay for AUR
   if ! command -v yay &>/dev/null; then
@@ -182,6 +182,20 @@ Current=sddm-flower-theme
 MaximumUid=60000
 SDDM
   ok "SDDM configured"
+
+  # ── GRUB config ──────────────────────────────────────────────────
+  info "Configuring GRUB..."
+  cp "$SCRIPT_DIR/dotfiles/grub/fgrub.png" /boot/grub/
+  cp "$SCRIPT_DIR/dotfiles/grub/theme.txt" /boot/grub/
+  sed -i 's/^#GRUB_BACKGROUND=/GRUB_BACKGROUND=\/boot\/grub\/fgrub.png/' /etc/default/grub
+  sed -i 's/^#GRUB_THEME=/GRUB_THEME=\/boot\/grub\/theme.txt/' /etc/default/grub
+  grep -q '^GRUB_THEME=' /etc/default/grub || echo 'GRUB_THEME=/boot/grub/theme.txt' >> /etc/default/grub
+  grep -q '^GRUB_BACKGROUND=' /etc/default/grub || echo 'GRUB_BACKGROUND=/boot/grub/fgrub.png' >> /etc/default/grub
+  grep -q '^GRUB_GFXMODE=' /etc/default/grub || echo 'GRUB_GFXMODE=1920x1080,auto' >> /etc/default/grub
+  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"/' /etc/default/grub
+  sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub || true
+  grub-mkconfig -o /boot/grub/grub.cfg
+  ok "GRUB configured"
 
   ok "Stage 2 complete!"
 
