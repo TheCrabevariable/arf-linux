@@ -44,6 +44,36 @@ Requires `archiso` on an Arch Linux system. Output: `out/arf-linux-<date>-x86_64
 4. Reboot → stage2 auto-runs (systemd oneshot) → final reboot → SDDM → Hyprland + Quickshell bar
    - Optionally run stage2 in chroot before first reboot to save one reboot
 
+## Screenshots
+
+![arf-linux](arf.png)
+
+## Keybinds
+
+| Key | Action |
+|---|---|
+| SUPER + Q | Terminal (kitty) |
+| SUPER + E | File manager (fren) |
+| SUPER + R | App launcher (Quickshell) |
+| SUPER + T | Theme switcher (Quickshell) |
+| SUPER + D | Monitor manager (Quickshell) |
+| SUPER + C | Close window |
+| SUPER + M | Exit Hyprland |
+| SUPER + V | Toggle window float |
+| SUPER + P | Pseudo-tile layout |
+| SUPER + J | Toggle split layout |
+| SUPER + F | Fullscreen window |
+| SUPER + Z | Region screenshot (clipboard) |
+| SUPER + arrows | Move focus directionally |
+| SUPER + 1-0 | Switch workspace |
+| SUPER + SHIFT + 1-0 | Move window to workspace |
+| SUPER + S | Toggle scratchpad |
+| SUPER + SHIFT + S | Move window to scratchpad |
+| SUPER + mouse drag | Move window |
+| SUPER + right-click drag | Resize window |
+| SUPER + scroll | Scroll workspaces |
+| XF86Audio (vol/bright) | Media & hardware keys |
+
 ## Post-Install
 
 Stage2 installs:
