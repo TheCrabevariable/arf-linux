@@ -92,11 +92,19 @@ if [ "$FS_CHOICE" = "btrfs" ]; then
     mkdir -p /mnt/{home,.snapshots}
     mount -o subvol=@home,compress=zstd "${DISK}2" /mnt/home
     mount -o subvol=@snapshots,compress=zstd "${DISK}2" /mnt/.snapshots
+    echo -n "Configure snapper snapshots for @ (/) and @home? [Y/n]: "; read -r SETUP_SNAPSHOTS
+    if [ -z "$SETUP_SNAPSHOTS" ] || [ "$SETUP_SNAPSHOTS" = "y" ] || [ "$SETUP_SNAPSHOTS" = "Y" ]; then
+      SNAPPER_PKG=', "snapper"'
+    else
+      SNAPPER_PKG=''
+    fi
   else
+    SNAPPER_PKG=''
     umount /mnt
     mount -o compress=zstd "${DISK}2" /mnt
   fi
 else
+  SNAPPER_PKG=''
   parted -s "$DISK" mkpart primary ext4 1025MiB 100%
   info "Formatting partitions..."
   mkfs.fat -F32 "${DISK}1"
@@ -140,7 +148,7 @@ cat > /tmp/arf-config/user_configuration.json <<EOF
   },
   "network_config": { "type": "nm" },
   "ntp": true,
-  "packages": ["base-devel", "git", "btop"],
+  "packages": ["base-devel", "git", "btop"${SNAPPER_PKG}],
   "profile_config": { "profile": null },
   "script": "guided",
   "silent": true,
@@ -222,6 +230,18 @@ SERVICE
 
 mkdir -p /mnt/etc/systemd/system/multi-user.target.wants
 ln -sf /etc/systemd/system/arf-stage2.service /mnt/etc/systemd/system/multi-user.target.wants/arf-stage2.service
+
+# ── Configure snapper snapshots ───────────────────────────────
+if [ -z "${SETUP_SNAPSHOTS:-}" ] || [ "$SETUP_SNAPSHOTS" = "y" ] || [ "$SETUP_SNAPSHOTS" = "Y" ]; then
+  info "Configuring snapper snapshots..."
+  arch-chroot /mnt bash -c "
+    snapper -c root create-config /
+    snapper -c home create-config /home
+    systemctl enable snapper-timeline.timer snapper-cleanup.timer
+    systemctl enable snapper-boot.service
+  " 2>&1 | tee /tmp/arf-snapper.log || true
+  ok "Snapper configured for @ (/) and @home"
+fi
 
 # ── Enable fstrim if SSD ─────────────────────────────────────
 if [ "$IS_SSD" = true ]; then
