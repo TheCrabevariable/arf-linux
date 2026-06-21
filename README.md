@@ -41,8 +41,8 @@ Requires `archiso` on an Arch Linux system. Output: `out/arf-linux-<date>-x86_64
 1. Write ISO to USB: `sudo dd if=arf-linux-<date>-x86_64.iso of=/dev/sdX bs=4M status=progress && sync`
 2. Boot from USB — `arf-installer` auto-launches
 3. Follow prompts: disk → WiFi (optional) → hostname/user/password/timezone → confirm wipe
-4. Optionally run stage2 in chroot before reboot
-5. Reboot → stage2 auto-completes → SDDM → Hyprland + Quickshell bar
+4. Reboot → stage2 auto-runs (systemd oneshot) → final reboot → SDDM → Hyprland + Quickshell bar
+   - Optionally run stage2 in chroot before first reboot to save one reboot
 
 ## Post-Install
 
