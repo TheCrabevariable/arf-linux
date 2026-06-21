@@ -55,7 +55,7 @@ stage2() {
   info "Stage 2: Installing packages"
 
   # Tweak pacman.conf
-  sed -i 's/^#Color/Color/; s/^#ParallelDownloads/ParallelDownloads/' /etc/pacman.conf
+  sed -i 's/^#Color/Color/; s/^#ParallelDownloads = 5/ParallelDownloads = 4/' /etc/pacman.conf
   grep -q '^ILoveCandy' /etc/pacman.conf || sed -i '/^Color/a ILoveCandy' /etc/pacman.conf
   grep -q '^VerbosePkgLists' /etc/pacman.conf || sed -i '/^Color/a VerbosePkgLists' /etc/pacman.conf
 
