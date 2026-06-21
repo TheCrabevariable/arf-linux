@@ -101,7 +101,6 @@ stage2() {
     pacman -S --noconfirm flatpak flatpak-xdg-utils
   fi
   flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  sudo -u "$USERNAME" flatpak install -y flathub com.vesktop.Vesktop
   sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl
 
   # ── Dotfiles ──────────────────────────────────────────────────

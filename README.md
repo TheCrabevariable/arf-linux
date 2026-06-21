@@ -77,8 +77,8 @@ Requires `archiso` on an Arch Linux system. Output: `out/arf-linux-<date>-x86_64
 ## Post-Install
 
 Stage2 installs:
-- **AUR packages:** helium-browser-bin, animu-bin, fren-git
-- **Flatpaks:** Vesktop, Heroic Game Launcher
+- **AUR packages:** helium-browser-bin, animu-bin, vesktop-bin, fren-git
+- **Flatpaks:** Heroic Game Launcher
 - **Dotfiles:** hyprland, kitty, btop, fastfetch, fren, zed, zsh, rmpc
 - **Wallpapers:** cloned from [TheCrabevariable/Wallpaper](https://github.com/TheCrabevariable/Wallpaper)
 - **SDDM theme:** flower theme
