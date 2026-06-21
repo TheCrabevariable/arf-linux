@@ -7,6 +7,7 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
   hl.exec_cmd("hyprctl setcursor breeze 24")
   hl.exec_cmd("hyprpaper")
+  hl.exec_cmd("udiskie -t")
 end)
 
 -- Environment variables

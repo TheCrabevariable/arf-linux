@@ -1,17 +1,18 @@
--- Monitors
-hl.monitor({ output = "DP-2", mode = "1920x1080@180", position = "0x0", scale = 1 })
-hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "1920x0", scale = 1 })
+-- Monitors (auto-detected — use QS Monitor Manager to arrange)
 
 -- Autostart
 hl.on("hyprland.start", function()
   hl.exec_cmd("qs")
   hl.exec_cmd("hypridle")
+  hl.exec_cmd("systemctl --user start hyprpolkitagent")
   hl.exec_cmd("hyprctl setcursor breeze 24")
   hl.exec_cmd("hyprpaper")
+  hl.exec_cmd("udiskie -t")
 end)
 
 -- Environment variables
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
+hl.env("PATH", os.getenv("PATH") .. ":/home/catboy/.local/bin")
 hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 hl.env("XCURSOR_THEME", "breeze")
@@ -55,14 +56,7 @@ hl.config({
     disable_hyprland_logo = true,
     mouse_move_focuses_monitor = true,
   },
-  input = {
-    kb_layout = "us",
-    follow_mouse = 1,
-    sensitivity = 0,
-    touchpad = {
-      natural_scroll = false,
-    },
-  },
+
 })
 
 -- Bezier curves
@@ -95,8 +89,10 @@ local mainMod = "SUPER"
 
 -- Program launchers
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd("kitty"))
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("kitty -e env TERM=xterm-kitty fren"))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("/usr/bin/qs ipc call launcher toggle"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("/usr/bin/qs ipc call theme toggle"))
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("/usr/bin/qs ipc call monitors toggle"))
 
 -- Window management
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
@@ -117,10 +113,28 @@ hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
 hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
 
 -- Workspace switching
-for i = 1, 10 do
-  hl.bind(mainMod .. " + " .. i, hl.dsp.focus({ workspace = i }))
-  hl.bind(mainMod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
-end
+hl.bind(mainMod .. " + 1", hl.dsp.focus({ workspace = 1 }))
+hl.bind(mainMod .. " + 2", hl.dsp.focus({ workspace = 2 }))
+hl.bind(mainMod .. " + 3", hl.dsp.focus({ workspace = 3 }))
+hl.bind(mainMod .. " + 4", hl.dsp.focus({ workspace = 4 }))
+hl.bind(mainMod .. " + 5", hl.dsp.focus({ workspace = 5 }))
+hl.bind(mainMod .. " + 6", hl.dsp.focus({ workspace = 6 }))
+hl.bind(mainMod .. " + 7", hl.dsp.focus({ workspace = 7 }))
+hl.bind(mainMod .. " + 8", hl.dsp.focus({ workspace = 8 }))
+hl.bind(mainMod .. " + 9", hl.dsp.focus({ workspace = 9 }))
+hl.bind(mainMod .. " + 0", hl.dsp.focus({ workspace = 10 }))
+
+-- Move window to workspace
+hl.bind(mainMod .. " + SHIFT + 1", hl.dsp.window.move({ workspace = 1 }))
+hl.bind(mainMod .. " + SHIFT + 2", hl.dsp.window.move({ workspace = 2 }))
+hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.window.move({ workspace = 3 }))
+hl.bind(mainMod .. " + SHIFT + 4", hl.dsp.window.move({ workspace = 4 }))
+hl.bind(mainMod .. " + SHIFT + 5", hl.dsp.window.move({ workspace = 5 }))
+hl.bind(mainMod .. " + SHIFT + 6", hl.dsp.window.move({ workspace = 6 }))
+hl.bind(mainMod .. " + SHIFT + 7", hl.dsp.window.move({ workspace = 7 }))
+hl.bind(mainMod .. " + SHIFT + 8", hl.dsp.window.move({ workspace = 8 }))
+hl.bind(mainMod .. " + SHIFT + 9", hl.dsp.window.move({ workspace = 9 }))
+hl.bind(mainMod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = 10 }))
 
 -- Special workspace (scratchpad)
 hl.bind(mainMod .. " + S", hl.dsp.workspace.toggle_special("magic"))
@@ -147,3 +161,6 @@ hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = tr
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+
+-- Window rules: float kitty
+hl.window_rule({ match = { class = "kitty" }, float = true })
