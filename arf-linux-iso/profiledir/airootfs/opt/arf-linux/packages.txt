@@ -39,6 +39,8 @@ xdg-desktop-portal-hyprland
 udiskie
 os-prober
 bazaar
+flatpak
+flatpak-xdg-utils
 
 # AUR packages
 helium-browser-bin

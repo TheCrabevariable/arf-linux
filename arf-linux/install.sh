@@ -101,7 +101,7 @@ stage2() {
     quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
     pipewire pipewire-pulse wireplumber power-profiles-daemon
-    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar
+    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar flatpak flatpak-xdg-utils
   )
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
@@ -134,11 +134,13 @@ stage2() {
   systemctl enable sddm
   systemctl enable bluetooth
   systemctl enable power-profiles-daemon
+  systemctl enable NetworkManager
   sudo -u "$USERNAME" bash -c "
     mkdir -p ~/.config/systemd/user/default.target.wants
     ln -sf /usr/lib/systemd/user/pipewire.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/pipewire-pulse.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/wireplumber.service ~/.config/systemd/user/default.target.wants/
+    ln -sf /usr/lib/systemd/user/xdg-desktop-portal-hyprland.service ~/.config/systemd/user/default.target.wants/
   "
 
   # ── Dotfiles ──────────────────────────────────────────────────
