@@ -26,8 +26,21 @@ Singleton {
       return match
         && match[1] === target
         && Math.round(parseFloat(match[2])) === rateRounded;
-    }) ?? m.availableModes[0]
+    }) ?? findBestMode(m)
       ?? `${m.width}x${m.height}@${m.refreshRate.toFixed(2)}Hz`;
+  }
+
+  function findBestMode(m) {
+    const target = `${m.width}x${m.height}`;
+    let best = null;
+    let bestRate = 0;
+    for (const mode of m.availableModes) {
+      const match = mode.match(/^(\d+x\d+)@([\d.]+)Hz$/);
+      if (!match || match[1] !== target) continue;
+      const rate = parseFloat(match[2]);
+      if (rate > bestRate) { best = mode; bestRate = rate; }
+    }
+    return best;
   }
 
   // Shared core: builds one monitor line with a caller-supplied prefix
