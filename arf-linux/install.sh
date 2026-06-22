@@ -114,8 +114,8 @@ stage2() {
     info "Installing flatpak..."
     pacman -S --noconfirm flatpak flatpak-xdg-utils
   fi
-  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl
+  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+  sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl 2>/dev/null || info "Flatpak install skipped (needs D-Bus — rerun manually after reboot)"
 
   # ── Dotfiles ──────────────────────────────────────────────────
   info "Applying dotfiles..."
