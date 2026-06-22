@@ -559,6 +559,7 @@ Scope {
               width: battContent.width + 12
               radius: 12
               color: root.theme.bgSurface
+              visible: SystemInfo.hasBattery
               Accessible.role: Accessible.StaticText
               Accessible.name: "Battery: " + SystemInfo.batteryLevel
 

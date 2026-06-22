@@ -15,6 +15,7 @@ Singleton {
   property string batteryLevel: "0%"
   property string batteryIcon: "󰂎"
   property bool batteryCharging: false
+  property bool hasBattery: false
   property string temperature: "0°C"
   property bool bluetoothOn: false
   property string bluetoothInfo: "Off"
@@ -85,14 +86,20 @@ Singleton {
   // Battery
   Process {
     id: batteryProc
-    command: ["sh", "-c", "printf '%s\\n%s' \"$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null || echo '99')\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null || echo 'Discharging')\""]
+    command: ["sh", "-c", "batpath=$(ls /sys/class/power_supply/BAT* 2>/dev/null | head -1); if [ -n \"$batpath\" ]; then printf '%s:%s' \"$(cat \"$batpath/capacity\" 2>/dev/null || echo '99')\" \"$(cat \"$batpath/status\" 2>/dev/null || echo 'Discharging')\"; else echo 'none'; fi"]
     running: true
 
     stdout: StdioCollector {
       onStreamFinished: {
-        const lines = text.trim().split("\n")
-        const level = parseInt(lines[0]) || 0
-        const status = (lines[1] || "Discharging").trim()
+        const raw = text.trim()
+        if (raw === "none") {
+          root.hasBattery = false
+          return
+        }
+        root.hasBattery = true
+        const parts = raw.split(":")
+        const level = parseInt(parts[0]) || 0
+        const status = (parts[1] || "Discharging").trim()
 
         root.batteryLevelRaw = level
         root.batteryLevel = level + "%"
