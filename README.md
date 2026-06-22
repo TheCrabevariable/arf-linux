@@ -64,6 +64,8 @@ Requires `archiso` on an Arch Linux system. Output: `out/arf-linux-<date>-x86_64
 | SUPER + J | Toggle split layout |
 | SUPER + F | Fullscreen window |
 | SUPER + Z | Region screenshot (clipboard) |
+| SUPER + SHIFT + Z | Region screenshot (file) |
+| SUPER + CTRL + Z | Fullscreen screenshot (clipboard) |
 | SUPER + arrows | Move focus directionally |
 | SUPER + 1-0 | Switch workspace |
 | SUPER + SHIFT + 1-0 | Move window to workspace |
