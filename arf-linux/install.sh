@@ -79,6 +79,33 @@ stage2() {
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
 
+  # ── Graphics drivers ────────────────────────────────────────────
+  info "Detecting GPU and installing drivers..."
+  GPU_VENDOR=$(lspci -k | grep -E "(VGA|3D)" | grep -iEo "(nvidia|amd|intel)" | head -1 | tr '[:upper:]' '[:lower:]')
+  DRIVERS=()
+
+  case "$GPU_VENDOR" in
+    nvidia)
+      DRIVERS+=(nvidia-dkms nvidia-utils lib32-nvidia-utils nvidia-settings)
+      ok "NVIDIA GPU detected — installing proprietary drivers"
+      ;;
+    amd)
+      DRIVERS+=(mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon xf86-video-amdgpu)
+      ok "AMD GPU detected — installing Mesa + Vulkan"
+      ;;
+    intel)
+      DRIVERS+=(mesa lib32-mesa vulkan-intel lib32-vulkan-intel xf86-video-intel)
+      ok "Intel GPU detected — installing Mesa + Vulkan"
+      ;;
+    *)
+      DRIVERS+=(mesa lib32-mesa)
+      ok "No discrete GPU detected — installing Mesa (fallback)"
+      ;;
+  esac
+
+  pacman -S --noconfirm --needed "${DRIVERS[@]}"
+  ok "Graphics drivers installed"
+
   # Install yay for AUR
   if ! command -v yay &>/dev/null; then
     info "Installing yay (AUR helper)"
