@@ -15,9 +15,11 @@ Singleton {
   property string batteryLevel: "0%"
   property string batteryIcon: "󰂎"
   property bool batteryCharging: false
+  property bool hasBattery: false
   property string temperature: "0°C"
   property bool bluetoothOn: false
   property string bluetoothInfo: "Off"
+  property string powerProfile: "balanced"
 
   // CPU Usage
   Process {
@@ -84,14 +86,20 @@ Singleton {
   // Battery
   Process {
     id: batteryProc
-    command: ["sh", "-c", "printf '%s\\n%s' \"$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null || echo '99')\" \"$(cat /sys/class/power_supply/BAT*/status 2>/dev/null || echo 'Discharging')\""]
+    command: ["sh", "-c", "bats=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null); if [ -z \"$bats\" ]; then echo 'none'; else for bat in $bats; do enow=$(cat \"$bat/energy_now\" 2>/dev/null || cat \"$bat/charge_now\" 2>/dev/null || echo 0); efull=$(cat \"$bat/energy_full\" 2>/dev/null || cat \"$bat/charge_full\" 2>/dev/null || echo 0); total=$((total + enow)); max=$((max + efull)); done; charging=$(cat \"$(echo \"$bats\" | head -1)/status\" 2>/dev/null); [ \"$max\" -gt 0 ] && echo \"$((total * 100 / max)):$charging\" || echo 'none'; fi"]
     running: true
 
     stdout: StdioCollector {
       onStreamFinished: {
-        const lines = text.trim().split("\n")
-        const level = parseInt(lines[0]) || 0
-        const status = (lines[1] || "Discharging").trim()
+        const raw = text.trim()
+        if (raw === "none") {
+          root.hasBattery = false
+          return
+        }
+        root.hasBattery = true
+        const parts = raw.split(":")
+        const level = parseInt(parts[0]) || 0
+        const status = (parts[1] || "Discharging").trim()
 
         root.batteryLevelRaw = level
         root.batteryLevel = level + "%"
@@ -108,6 +116,19 @@ Singleton {
         else if (level >= 20) root.batteryIcon = "󰁼"
         else if (level >= 10) root.batteryIcon = "󰁻"
         else root.batteryIcon = "󰁺"
+      }
+    }
+  }
+
+  // Power Profile
+  Process {
+    id: powerProfileProc
+    command: ["sh", "-c", "powerprofilesctl get 2>/dev/null || echo 'balanced'"]
+    running: true
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        root.powerProfile = text.trim()
       }
     }
   }
@@ -135,6 +156,7 @@ Singleton {
       memProc.running = true
       netProc.running = true
       btProc.running = true
+      powerProfileProc.running = true
       batteryProc.running = true
       tempProc.running = true
     }

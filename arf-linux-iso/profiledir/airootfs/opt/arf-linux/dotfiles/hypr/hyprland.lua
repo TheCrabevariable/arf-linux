@@ -1,4 +1,13 @@
 -- Monitors (auto-detected — use QS Monitor Manager to arrange)
+local mons = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
+local f = io.open(mons, "r")
+if f then
+  f:close()
+  local ok, err = pcall(dofile, mons)
+  if not ok then
+    hl.exec_cmd("notify-send 'Monitor config error' '" .. err .. "'")
+  end
+end
 
 -- Autostart
 hl.on("hyprland.start", function()

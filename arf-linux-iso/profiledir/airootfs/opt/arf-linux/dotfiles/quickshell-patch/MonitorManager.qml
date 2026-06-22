@@ -347,7 +347,7 @@ Scope {
 
             Text {
               Layout.fillWidth: true
-              text: "Persistence disabled — add 'source = ~/.config/hypr/monitors.conf' to hyprland.conf."
+              text: "Persistence disabled — monitors.lua not loaded in hyprland.lua."
               color: root.theme.accentOrange
               font { pixelSize: 11; family: root.font }
               elide: Text.ElideRight
