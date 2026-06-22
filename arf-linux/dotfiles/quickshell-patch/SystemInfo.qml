@@ -86,7 +86,7 @@ Singleton {
   // Battery
   Process {
     id: batteryProc
-    command: ["sh", "-c", "batpath=$(ls /sys/class/power_supply/BAT* 2>/dev/null | head -1); if [ -n \"$batpath\" ]; then printf '%s:%s' \"$(cat \"$batpath/capacity\" 2>/dev/null || echo '99')\" \"$(cat \"$batpath/status\" 2>/dev/null || echo 'Discharging')\"; else echo 'none'; fi"]
+    command: ["sh", "-c", "bats=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null); if [ -z \"$bats\" ]; then echo 'none'; else for bat in $bats; do enow=$(cat \"$bat/energy_now\" 2>/dev/null || cat \"$bat/charge_now\" 2>/dev/null || echo 0); efull=$(cat \"$bat/energy_full\" 2>/dev/null || cat \"$bat/charge_full\" 2>/dev/null || echo 0); total=$((total + enow)); max=$((max + efull)); done; charging=$(cat \"$(echo \"$bats\" | head -1)/status\" 2>/dev/null); [ \"$max\" -gt 0 ] && echo \"$((total * 100 / max)):$charging\" || echo 'none'; fi"]
     running: true
 
     stdout: StdioCollector {
