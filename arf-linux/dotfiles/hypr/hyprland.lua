@@ -104,7 +104,8 @@ hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 
 -- Screenshots
 hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only"))
-hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only"))
+hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.exec_cmd("hyprshot -m region --output-filename ~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png"))
+hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("hyprshot -m output --clipboard-only"))
 
 -- Focus movement
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))

@@ -39,6 +39,7 @@ xdg-desktop-portal-hyprland
 udiskie
 os-prober
 bazaar
+dunst
 
 # AUR packages
 helium-browser-bin
