@@ -1,0 +1,78 @@
+* {
+    all: unset;
+    font-family: "Hack Nerd Font";
+}
+
+window {
+    background-color: rgba(26, 27, 38, 0.85);
+}
+
+button {
+    margin: 8px;
+    padding: 20px 32px;
+    border-radius: 12px;
+    border: 2px solid rgba(60, 68, 92, 0.6);
+    background-color: rgba(36, 40, 59, 0.9);
+    color: #c0caf5;
+    font-size: 18px;
+    min-width: 160px;
+    min-height: 80px;
+}
+
+button:hover {
+    border-color: #7aa2f7;
+    background-color: rgba(36, 40, 59, 1);
+}
+
+button:focus {
+    border-color: #7aa2f7;
+    background-color: rgba(36, 40, 59, 1);
+}
+
+.lock button:hover {
+    border-color: #9ece6a;
+}
+
+.lock button:focus {
+    border-color: #9ece6a;
+}
+
+.logout button:hover {
+    border-color: #e0af68;
+}
+
+.logout button:focus {
+    border-color: #e0af68;
+}
+
+.suspend button:hover {
+    border-color: #2ac3de;
+}
+
+.suspend button:focus {
+    border-color: #2ac3de;
+}
+
+.hibernate button:hover {
+    border-color: #bb9af7;
+}
+
+.hibernate button:focus {
+    border-color: #bb9af7;
+}
+
+.reboot button:hover {
+    border-color: #f7768e;
+}
+
+.reboot button:focus {
+    border-color: #f7768e;
+}
+
+.shutdown button:hover {
+    border-color: #ff0000;
+}
+
+.shutdown button:focus {
+    border-color: #ff0000;
+}

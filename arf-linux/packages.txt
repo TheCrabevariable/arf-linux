@@ -48,3 +48,4 @@ helium-browser-bin
 animu-bin
 fren-git
 heroic-games-launcher-bin
+wlogout

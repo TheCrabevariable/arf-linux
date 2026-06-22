@@ -124,6 +124,7 @@ stage2() {
     animu-bin
     fren-git
     heroic-games-launcher-bin
+    wlogout
   )
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"

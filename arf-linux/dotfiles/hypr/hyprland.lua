@@ -111,6 +111,7 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("kitty -e env TERM=xterm-kitty fren")
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("/usr/bin/qs ipc call launcher toggle"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("/usr/bin/qs ipc call theme toggle"))
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("/usr/bin/qs ipc call monitors toggle"))
+hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("wlogout -b 5"))
 
 -- Window management
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
