@@ -8,6 +8,15 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("hyprctl setcursor breeze 24")
   hl.exec_cmd("hyprpaper")
   hl.exec_cmd("udiskie -t")
+  -- Input config (hl.config uses native Lua — no legacy parser needed)
+  hl.config({
+    input = {
+      kb_layout = "us",
+      follow_mouse = 1,
+      sensitivity = 0,
+      touchpad = { natural_scroll = false }
+    }
+  })
 end)
 
 -- Environment variables
@@ -104,7 +113,8 @@ hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 
 -- Screenshots
 hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only"))
-hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only"))
+hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.exec_cmd("hyprshot -m region --output-filename ~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png"))
+hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("hyprshot -m output --clipboard-only"))
 
 -- Focus movement
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
