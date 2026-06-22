@@ -106,17 +106,19 @@ stage2() {
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
 
-  # Install yay for AUR
+  # Install yay + AUR packages
+  # (needs NOPASSWD sudo since this runs in chroot with no TTY)
+  echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-arf
+
   if ! command -v yay &>/dev/null; then
     info "Installing yay (AUR helper)"
     sudo -u "$USERNAME" bash -c "
       cd /tmp
-      git clone https://aur.archlinux.org/yay-bin.git
+      git clone --depth 1 https://aur.archlinux.org/yay-bin.git
       cd yay-bin && makepkg -si --noconfirm
     "
   fi
 
-  # AUR packages
   AUR=(
     helium-browser-bin
     animu-bin
@@ -125,6 +127,8 @@ stage2() {
   )
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
+
+  rm -f /etc/sudoers.d/99-arf
 
   # Enable services
   systemctl enable sddm
