@@ -8,6 +8,11 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("hyprctl setcursor breeze 24")
   hl.exec_cmd("hyprpaper")
   hl.exec_cmd("udiskie -t")
+  -- Input config (Lua parser can't parse config blocks, use hyprctl keyword)
+  hl.exec_cmd("keyword input:kb_layout us")
+  hl.exec_cmd("keyword input:follow_mouse 1")
+  hl.exec_cmd("keyword input:sensitivity 0")
+  hl.exec_cmd("keyword input:touchpad:natural_scroll false")
 end)
 
 -- Environment variables
