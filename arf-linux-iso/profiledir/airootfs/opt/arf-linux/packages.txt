@@ -38,10 +38,10 @@ xdg-desktop-portal
 xdg-desktop-portal-hyprland
 udiskie
 os-prober
+bazaar
 
 # AUR packages
 helium-browser-bin
 animu-bin
 fren-git
 heroic-games-launcher-bin
-bazarr

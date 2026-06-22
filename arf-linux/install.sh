@@ -74,7 +74,7 @@ stage2() {
     quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
     pipewire pipewire-pulse wireplumber power-profiles-daemon
-    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie
+    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar
   )
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
@@ -95,7 +95,6 @@ stage2() {
     animu-bin
     fren-git
     heroic-games-launcher-bin
-    bazarr
   )
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
