@@ -43,7 +43,5 @@ os-prober
 helium-browser-bin
 animu-bin
 fren-git
-
-# Flatpak
-flatpak
-flatpak-xdg-utils
+heroic-games-launcher-bin
+bazarr

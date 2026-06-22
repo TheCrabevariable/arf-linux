@@ -94,6 +94,8 @@ stage2() {
     helium-browser-bin
     animu-bin
     fren-git
+    heroic-games-launcher-bin
+    bazarr
   )
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
@@ -102,16 +104,12 @@ stage2() {
   systemctl enable sddm
   systemctl enable bluetooth
   systemctl enable power-profiles-daemon
-  local user_uid=$(id -u "$USERNAME")
-  sudo -u "$USERNAME" XDG_RUNTIME_DIR="/run/user/$user_uid" systemctl --user enable pipewire pipewire-pulse wireplumber
-
-  # Flatpak
-  if ! command -v flatpak &>/dev/null; then
-    info "Installing flatpak..."
-    pacman -S --noconfirm flatpak flatpak-xdg-utils
-  fi
-  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl
+  sudo -u "$USERNAME" bash -c "
+    mkdir -p ~/.config/systemd/user/default.target.wants
+    ln -sf /usr/lib/systemd/user/pipewire.service ~/.config/systemd/user/default.target.wants/
+    ln -sf /usr/lib/systemd/user/pipewire-pulse.service ~/.config/systemd/user/default.target.wants/
+    ln -sf /usr/lib/systemd/user/wireplumber.service ~/.config/systemd/user/default.target.wants/
+  "
 
   # ── Dotfiles ──────────────────────────────────────────────────
   info "Applying dotfiles..."

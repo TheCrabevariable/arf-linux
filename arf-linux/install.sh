@@ -94,6 +94,8 @@ stage2() {
     helium-browser-bin
     animu-bin
     fren-git
+    heroic-games-launcher-bin
+    bazarr
   )
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
@@ -108,14 +110,6 @@ stage2() {
     ln -sf /usr/lib/systemd/user/pipewire-pulse.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/wireplumber.service ~/.config/systemd/user/default.target.wants/
   "
-
-  # Flatpak
-  if ! command -v flatpak &>/dev/null; then
-    info "Installing flatpak..."
-    pacman -S --noconfirm flatpak flatpak-xdg-utils
-  fi
-  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-  sudo -u "$USERNAME" flatpak install -y flathub com.heroicgameslauncher.hgl 2>/dev/null || info "Flatpak install skipped (needs D-Bus — rerun manually after reboot)"
 
   # ── Dotfiles ──────────────────────────────────────────────────
   info "Applying dotfiles..."
