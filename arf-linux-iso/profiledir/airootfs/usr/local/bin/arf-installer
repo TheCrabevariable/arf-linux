@@ -249,18 +249,14 @@ if [ "$IS_SSD" = true ]; then
   ln -sf /usr/lib/systemd/system/fstrim.timer /mnt/etc/systemd/system/timers.target.wants/fstrim.timer 2>/dev/null || true
 fi
 
-# ── Optional stage2 now ──────────────────────────────────────
-echo ""
-echo -n "Run stage2 (packages + dotfiles) now instead of rebooting first? [Y/n]: "; read -r RUN_NOW
-if [ -z "$RUN_NOW" ] || [ "$RUN_NOW" = "y" ] || [ "$RUN_NOW" = "Y" ]; then
-  info "Running stage2 in chroot..."
-  cp /etc/resolv.conf /mnt/etc/resolv.conf 2>/dev/null || true
-  arch-chroot /mnt bash -c "
-    export USERNAME=$USERNAME HOME=/home/$USERNAME
-    bash /home/$USERNAME/arf-linux/install.sh --stage2
-  " 2>&1 | tee /tmp/arf-stage2.log || true
-  ok "Stage2 complete (non-fatal errors logged to /tmp/arf-stage2.log)"
-fi
+# ── Run stage2 in chroot ──────────────────────────────────────
+info "Running stage2 in chroot..."
+cp /etc/resolv.conf /mnt/etc/resolv.conf 2>/dev/null || true
+arch-chroot /mnt bash -c "
+  export USERNAME=$USERNAME HOME=/home/$USERNAME
+  bash /home/$USERNAME/arf-linux/install.sh --stage2
+" 2>&1 | tee /tmp/arf-stage2.log || true
+ok "Stage2 complete (non-fatal errors logged to /tmp/arf-stage2.log)"
 
 # ── Done ─────────────────────────────────────────────────────
 ok "Installation complete! Rebooting in 5 seconds..."
