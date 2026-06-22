@@ -100,8 +100,8 @@ stage2() {
     zed steam kitty fastfetch rmpc mpd networkmanager zsh python
     quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
-    pipewire pipewire-pulse wireplumber power-profiles-daemon
-    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar flatpak flatpak-xdg-utils
+    pipewire pipewire-pulse wireplumber power-profiles-daemon inotify-tools
+    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar grub-btrfs flatpak flatpak-xdg-utils
   )
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
@@ -124,6 +124,7 @@ stage2() {
     animu-bin
     fren-git
     heroic-games-launcher-bin
+    wlogout
   )
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
@@ -235,6 +236,7 @@ SDDM
   sed -i 's|^GRUB_CMDLINE_LINUX_DEFAULT=".*"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|' /etc/default/grub
   sed -i 's|^#GRUB_DISABLE_OS_PROBER=false|GRUB_DISABLE_OS_PROBER=false|' /etc/default/grub || true
   grub-mkconfig -o /boot/grub/grub.cfg
+  systemctl enable grub-btrfsd 2>/dev/null || true
   ok "GRUB configured"
 
   ok "Stage 2 complete!"

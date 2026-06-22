@@ -34,12 +34,14 @@ pipewire
 pipewire-pulse
 wireplumber
 power-profiles-daemon
+inotify-tools
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 udiskie
 wlr-randr
 os-prober
 bazaar
+grub-btrfs
 flatpak
 flatpak-xdg-utils
 
