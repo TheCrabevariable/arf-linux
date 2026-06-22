@@ -19,14 +19,12 @@ Singleton {
   signal applyDone(bool hasErrors, string errorText)
 
   function findCurrentMode(m) {
-    const target      = `${m.width}x${m.height}`;
-    const rateRounded = Math.round(m.refreshRate);
-    return m.availableModes.find(mode => {
-      const match = mode.match(/^(\d+x\d+)@([\d.]+)Hz$/);
-      return match
-        && match[1] === target
-        && Math.round(parseFloat(match[2])) === rateRounded;
-    }) ?? findBestMode(m)
+    const target = `${m.width}x${m.height}`;
+    return findBestMode(m)
+      ?? m.availableModes.find(mode => {
+        const match = mode.match(/^(\d+x\d+)@([\d.]+)Hz$/);
+        return match && match[1] === target;
+      })
       ?? `${m.width}x${m.height}@${m.refreshRate.toFixed(2)}Hz`;
   }
 
