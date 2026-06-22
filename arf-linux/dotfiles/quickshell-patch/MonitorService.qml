@@ -138,7 +138,7 @@ Singleton {
   Process {
     id: sourceCheck
     command: ["sh", "-c",
-      "grep -q 'source.*monitors\\.conf' \"$HOME/.config/hypr/hyprland.conf\" && echo yes || echo no"]
+      "grep -q 'monitors\\.lua' \"$HOME/.config/hypr/hyprland.lua\" 2>/dev/null && echo yes || echo no"]
     running: true
     stdout: StdioCollector {
       onStreamFinished: {
