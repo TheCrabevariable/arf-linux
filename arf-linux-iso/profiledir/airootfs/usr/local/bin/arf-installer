@@ -255,6 +255,7 @@ cp /etc/resolv.conf /mnt/etc/resolv.conf 2>/dev/null || true
 arch-chroot /mnt bash -c "
   export USERNAME=$USERNAME HOME=/home/$USERNAME
   bash /home/$USERNAME/arf-linux/install.sh --stage2
+  systemctl disable arf-stage2.service
 " 2>&1 | tee /tmp/arf-stage2.log || true
 ok "Stage2 complete (non-fatal errors logged to /tmp/arf-stage2.log)"
 

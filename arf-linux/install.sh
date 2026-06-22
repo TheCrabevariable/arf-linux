@@ -102,8 +102,12 @@ stage2() {
   systemctl enable sddm
   systemctl enable bluetooth
   systemctl enable power-profiles-daemon
-  local user_uid=$(id -u "$USERNAME")
-  sudo -u "$USERNAME" XDG_RUNTIME_DIR="/run/user/$user_uid" systemctl --user enable pipewire pipewire-pulse wireplumber
+  sudo -u "$USERNAME" bash -c "
+    mkdir -p ~/.config/systemd/user/default.target.wants
+    ln -sf /usr/lib/systemd/user/pipewire.service ~/.config/systemd/user/default.target.wants/
+    ln -sf /usr/lib/systemd/user/pipewire-pulse.service ~/.config/systemd/user/default.target.wants/
+    ln -sf /usr/lib/systemd/user/wireplumber.service ~/.config/systemd/user/default.target.wants/
+  "
 
   # Flatpak
   if ! command -v flatpak &>/dev/null; then
