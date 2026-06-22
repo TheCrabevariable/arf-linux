@@ -1,3 +1,4 @@
+# Official packages
 hyprland
 hypridle
 hyprlock
@@ -5,27 +6,17 @@ hyprpaper
 hyprshot
 hyprpolkitagent
 hyprpicker
+zed
+steam
 kitty
-zsh
 fastfetch
+rmpc
+mpd
+networkmanager
+zsh
+python
 quickshell
 ttf-hack-nerd
-
-fren
-zed
-mako
-wofi
-waybar
-pipewire
-pipewire-pulse
-wireplumber
-networkmanager
-noto-fonts
-noto-fonts-emoji
-otf-font-awesome
-cantarell-fonts
-playerctl
-brightnessctl
 sddm
 opencode
 gnome-disk-utility
@@ -33,9 +24,26 @@ imv
 mpv
 pavucontrol
 yt-dlp
+bluetui
+bluez
+bluez-utils
+playerctl
+brightnessctl
+lm_sensors
+pipewire
+pipewire-pulse
+wireplumber
+power-profiles-daemon
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+udiskie
+os-prober
+
+# AUR packages
+helium-browser-bin
+animu-bin
+fren-git
+
+# Flatpak
 flatpak
 flatpak-xdg-utils
-animu-bin
-vesktop-bin
-fren-git
-# flatpak apps (installed separately):

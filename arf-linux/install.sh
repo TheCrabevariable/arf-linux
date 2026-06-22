@@ -70,9 +70,9 @@ stage2() {
   # Official packages
   OFFICIAL=(
     hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
-    zed steam kitty fastfetch rmpc mpd networkmanager
+    zed steam kitty fastfetch rmpc mpd networkmanager zsh python
     quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
-    bluetui bluez bluez-utils playerctl brightnessctl
+    bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
     pipewire pipewire-pulse wireplumber power-profiles-daemon
     xdg-desktop-portal xdg-desktop-portal-hyprland udiskie
   )
@@ -98,8 +98,12 @@ stage2() {
 
   sudo -u "$USERNAME" yay -S --noconfirm --needed "${AUR[@]}"
 
-  # Enable SDDM
+  # Enable services
   systemctl enable sddm
+  systemctl enable bluetooth
+  systemctl enable power-profiles-daemon
+  local user_uid=$(id -u "$USERNAME")
+  sudo -u "$USERNAME" XDG_RUNTIME_DIR="/run/user/$user_uid" systemctl --user enable pipewire pipewire-pulse wireplumber
 
   # Flatpak
   if ! command -v flatpak &>/dev/null; then
@@ -125,7 +129,8 @@ stage2() {
 
   if [ -f "$DOTFILES/zsh/.zshrc" ]; then
     cp "$DOTFILES/zsh/.zshrc" "$HOME/.zshrc"
-    ok "Applied config for zsh"
+    chsh -s "$(which zsh)" "$USERNAME"
+    ok "Applied config for zsh and set as default shell"
   fi
 
   mkdir -p "$HOME/.config/mpd/playlists"
@@ -149,6 +154,12 @@ stage2() {
   fi
   if [ -f "$QS_PATCH/MonitorManager.qml" ]; then
     cp "$QS_PATCH/MonitorManager.qml" "$HOME/.config/quickshell/monitor-manager/MonitorManager.qml"
+  fi
+  if [ -f "$QS_PATCH/SystemInfo.qml" ]; then
+    cp "$QS_PATCH/SystemInfo.qml" "$HOME/.config/quickshell/bar/SystemInfo.qml"
+  fi
+  if [ -f "$QS_PATCH/Bar.qml" ]; then
+    cp "$QS_PATCH/Bar.qml" "$HOME/.config/quickshell/bar/Bar.qml"
   fi
   ok "Quickshell config applied"
 
