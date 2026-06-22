@@ -73,6 +73,11 @@ Singleton {
     return lines.join("\n") + "\n";
   }
 
+  function notify(msg) {
+    notifyProc.command = ["hyprctl", "notify", "-1", "5000", "0", msg];
+    notifyProc.running = true;
+  }
+
   function refresh() {
     refreshDebounce.restart();
   }
@@ -229,7 +234,7 @@ Singleton {
     }
   }
 
-  // Write monitors.conf — fire and forget; log errors
+  // Write monitors.lua — fire and forget; log errors
   Process {
     id: writeProc
     running: false
@@ -240,6 +245,12 @@ Singleton {
           console.error("MonitorService: monitors.lua write failed:", text.trim());
       }
     }
+  }
+
+  // Send Hyprland notification
+  Process {
+    id: notifyProc
+    running: false
   }
 
   // Listen for Hyprland events: hotplug and config reload
