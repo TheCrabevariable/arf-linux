@@ -101,7 +101,7 @@ stage2() {
     quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
     pipewire pipewire-pulse wireplumber power-profiles-daemon
-    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar flatpak flatpak-xdg-utils
+    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar flatpak flatpak-xdg-utils
   )
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober

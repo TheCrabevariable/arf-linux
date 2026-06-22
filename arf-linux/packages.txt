@@ -37,6 +37,7 @@ power-profiles-daemon
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 udiskie
+wlr-randr
 os-prober
 bazaar
 flatpak
