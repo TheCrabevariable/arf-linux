@@ -74,7 +74,7 @@ Singleton {
         lines.push(`hl.exec_cmd("monitor = ${m.name},${mode},${m.x}x${m.y},${m.scale},mirror,${m.mirrorOf}")`);
       } else {
         const mode = buildWlrMode(m);
-        let cmd = `wlr-randr --output ${m.name} --mode ${mode} --pos ${m.x},${m.y} --scale ${m.scale}`;
+    let cmd = `wlr-randr --output ${m.name} --custom-mode ${mode} --pos ${m.x},${m.y} --scale ${m.scale}`;
         if (m.transform !== 0) cmd += ` --transform ${m.transform}`;
         lines.push(`hl.exec_cmd("exec-once ${cmd}")`);
       }
@@ -106,7 +106,7 @@ Singleton {
 
   function applyWlrRandr(m) {
     const mode = buildWlrMode(m);
-    let cmd = `wlr-randr --output ${m.name} --mode ${mode} --pos ${m.x},${m.y} --scale ${m.scale}`;
+        let cmd = `wlr-randr --output ${m.name} --custom-mode ${mode} --pos ${m.x},${m.y} --scale ${m.scale}`;
     if (m.transform !== 0) cmd += ` --transform ${m.transform}`;
     return cmd;
   }

@@ -181,15 +181,6 @@ Scope {
       if (hasErrors) {
         root.applyError = errorText;
       } else {
-        const rateChanged = root._openSnapshot.some(snap => {
-          const live = root.editState.find(m => m.name === snap.name);
-          if (!live || snap.selectedMode === live.selectedMode) return false;
-          const snapRate = snap.selectedMode.match(/@([\d.]+)Hz$/)?.[1];
-          const liveRate = live.selectedMode.match(/@([\d.]+)Hz$/)?.[1];
-          return snapRate && liveRate && snapRate !== liveRate;
-        });
-        if (rateChanged)
-          MonitorService.notify("Refresh rate change needs a Hyprland restart (SUPER+M).");
         root.initEditState();
         root.isOpen = false;
       }
