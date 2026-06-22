@@ -72,6 +72,11 @@ Scope {
   }
 
   Process {
+    id: powerProfileToggleProc
+    running: false
+  }
+
+  Process {
     id: backlightDiscovery
     command: ["sh", "-c", "p=$(ls -d /sys/class/backlight/*/brightness 2>/dev/null | head -1); [ -n \"$p\" ] && echo \"$p\" && cat \"${p%brightness}max_brightness\""]
     running: true
@@ -575,6 +580,63 @@ Scope {
                   color: root.theme.textPrimary
                   font.pixelSize: 11
                   font.family: root.font
+                }
+              }
+            }
+
+            // Power Profile
+            Rectangle {
+              height: 24
+              width: ppContent.width + 12
+              radius: 12
+              color: root.theme.bgSurface
+              Accessible.role: Accessible.Button
+              Accessible.name: "Power profile: " + SystemInfo.powerProfile + ", click to cycle"
+
+              Row {
+                id: ppContent
+                anchors.centerIn: parent
+                spacing: 6
+
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: {
+                    if (SystemInfo.powerProfile === "power-saver") return "󰾆"
+                    if (SystemInfo.powerProfile === "performance") return "󰀠"
+                    return "󰓅"
+                  }
+                  color: {
+                    if (SystemInfo.powerProfile === "power-saver") return root.theme.accentGreen
+                    if (SystemInfo.powerProfile === "performance") return root.theme.accentRed
+                    return root.theme.accentPrimary
+                  }
+                  font.pixelSize: 14
+                  font.family: root.font
+                }
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: {
+                    if (SystemInfo.powerProfile === "power-saver") return "Power Save"
+                    if (SystemInfo.powerProfile === "performance") return "Performance"
+                    return "Balanced"
+                  }
+                  color: root.theme.textPrimary
+                  font.pixelSize: 11
+                  font.family: root.font
+                }
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                acceptedButtons: Qt.LeftButton
+                onClicked: {
+                  var next = "balanced"
+                  if (SystemInfo.powerProfile === "power-saver") next = "balanced"
+                  else if (SystemInfo.powerProfile === "balanced") next = "performance"
+                  else if (SystemInfo.powerProfile === "performance") next = "power-saver"
+                  powerProfileToggleProc.command = ["powerprofilesctl", "set", next]
+                  powerProfileToggleProc.running = true
                 }
               }
             }

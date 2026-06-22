@@ -18,6 +18,7 @@ Singleton {
   property string temperature: "0°C"
   property bool bluetoothOn: false
   property string bluetoothInfo: "Off"
+  property string powerProfile: "balanced"
 
   // CPU Usage
   Process {
@@ -112,6 +113,19 @@ Singleton {
     }
   }
 
+  // Power Profile
+  Process {
+    id: powerProfileProc
+    command: ["sh", "-c", "powerprofilesctl get 2>/dev/null || echo 'balanced'"]
+    running: true
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        root.powerProfile = text.trim()
+      }
+    }
+  }
+
   // Temperature
   Process {
     id: tempProc
@@ -135,6 +149,7 @@ Singleton {
       memProc.running = true
       netProc.running = true
       btProc.running = true
+      powerProfileProc.running = true
       batteryProc.running = true
       tempProc.running = true
     }
