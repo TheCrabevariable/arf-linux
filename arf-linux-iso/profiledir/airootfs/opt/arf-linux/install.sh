@@ -67,19 +67,7 @@ stage2() {
 
   pacman -Syu --noconfirm
 
-  # Official packages
-  OFFICIAL=(
-    hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
-    zed steam kitty fastfetch rmpc mpd networkmanager zsh python
-    quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
-    bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
-    pipewire pipewire-pulse wireplumber power-profiles-daemon
-    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar
-  )
-
-  pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
-
-  # ── Graphics drivers ────────────────────────────────────────────
+  # ── Graphics drivers (before Steam so no prompt) ──────────────
   info "Detecting GPU and installing drivers..."
   GPU_VENDOR=$(lspci -k | grep -E "(VGA|3D)" | grep -iEo "(nvidia|amd|intel)" | head -1 | tr '[:upper:]' '[:lower:]')
   DRIVERS=()
@@ -105,6 +93,18 @@ stage2() {
 
   pacman -S --noconfirm --needed "${DRIVERS[@]}"
   ok "Graphics drivers installed"
+
+  # Official packages
+  OFFICIAL=(
+    hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
+    zed steam kitty fastfetch rmpc mpd networkmanager zsh python
+    quickshell ttf-hack-nerd sddm opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
+    bluetui bluez bluez-utils playerctl brightnessctl lm_sensors
+    pipewire pipewire-pulse wireplumber power-profiles-daemon
+    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie bazaar
+  )
+
+  pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
 
   # Install yay for AUR
   if ! command -v yay &>/dev/null; then
