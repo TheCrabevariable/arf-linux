@@ -19,12 +19,11 @@ fi
 echo ":: Bundling arf-linux into ISO..."
 ARF_DEST="$PROFILE/airootfs/opt/arf-linux"
 mkdir -p "$ARF_DEST"
-cp -r "$SCRIPT_DIR/../arf-linux"/* "$ARF_DEST/" 2>/dev/null || {
+cp -r --no-preserve=mode,ownership,xattr "$SCRIPT_DIR/../arf-linux"/* "$ARF_DEST/" 2>/dev/null || {
   echo "!! arf-linux source not found at ../arf-linux"
   echo "   Place the arf-linux directory next to arf-linux-iso/"
   exit 1
 }
-
 # Clean previous build
 rm -rf "$WORK_DIR" "$OUT_DIR"
 mkdir -p "$OUT_DIR"
