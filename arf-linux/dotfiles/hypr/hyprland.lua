@@ -1,16 +1,15 @@
--- Monitors (auto-detected — use QS Monitor Manager to arrange)
-local mons = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
-local f = io.open(mons, "r")
-if f then
-  f:close()
-  local ok, err = pcall(dofile, mons)
-  if not ok then
-    hl.exec_cmd("notify-send 'Monitor config error' '" .. err .. "'")
-  end
-end
-
 -- Autostart
 hl.on("hyprland.start", function()
+  -- Apply monitors (wlr-randr needs compositor fully initialized)
+  local mons = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
+  local f = io.open(mons, "r")
+  if f then
+    f:close()
+    local ok, err = pcall(dofile, mons)
+    if not ok then
+      hl.exec_cmd("notify-send 'Monitor config error' '" .. err .. "'")
+    end
+  end
   hl.exec_cmd("qs")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
