@@ -202,9 +202,9 @@ stage2() {
     git clone --depth 1 https://github.com/TheCrabevariable/Wallpaper.git "$WALLPAPER_DIR-tmp" 2>/dev/null || true
     if [ -d "$WALLPAPER_DIR-tmp" ]; then
       sudo mkdir -p /usr/share/sddm/themes/arf
-      sudo cp "$WALLPAPER_DIR-tmp/sddm/Sddm.jpg" /usr/share/sddm/themes/arf/background.jpg 2>/dev/null || true
-      cp "$WALLPAPER_DIR-tmp/hyprlock/hyprlock2.png" "$WALLPAPER_DIR/hyprlock2.png" 2>/dev/null || true
-      cp "$WALLPAPER_DIR-tmp/Kosmos/fren1.png" "$WALLPAPER_DIR/fren1.png" 2>/dev/null || true
+      sudo cp "$WALLPAPER_DIR-tmp/fren/sddm.png" /usr/share/sddm/themes/arf/background.jpg 2>/dev/null || true
+      cp "$WALLPAPER_DIR-tmp/fren/hyprlock.png" "$WALLPAPER_DIR/hyprlock.png" 2>/dev/null || true
+      cp "$WALLPAPER_DIR-tmp/fren/fren1.png" "$WALLPAPER_DIR/fren1.png" 2>/dev/null || true
       rm -rf "$WALLPAPER_DIR-tmp"
       ok "Wallpapers downloaded"
     else
