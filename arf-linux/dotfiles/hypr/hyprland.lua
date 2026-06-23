@@ -1,15 +1,15 @@
--- Autostart
-hl.on("hyprland.start", function()
-  -- Apply monitors (wlr-randr needs compositor fully initialized)
-  local mons = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
-  local f = io.open(mons, "r")
-  if f then
-    f:close()
-    local ok, err = pcall(dofile, mons)
-    if not ok then
-      hl.exec_cmd("notify-send 'Monitor config error' '" .. err .. "'")
-    end
+-- Apply monitors (exec wlr-randr works at top level on both startup and reload)
+local mons = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
+local f = io.open(mons, "r")
+if f then
+  f:close()
+  local ok, err = pcall(dofile, mons)
+  if not ok then
+    hl.exec_cmd("notify-send 'Monitor config error' '" .. err .. "'")
   end
+end
+
+hl.on("hyprland.start", function()
   hl.exec_cmd("qs")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
