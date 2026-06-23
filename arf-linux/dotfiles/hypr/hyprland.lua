@@ -10,6 +10,13 @@ if f then
 end
 
 hl.on("hyprland.start", function()
+  -- Also apply on fresh startup (Wayland socket is ready here)
+  local mons2 = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
+  local f2 = io.open(mons2, "r")
+  if f2 then
+    f2:close()
+    pcall(dofile, mons2)
+  end
   hl.exec_cmd("qs")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
