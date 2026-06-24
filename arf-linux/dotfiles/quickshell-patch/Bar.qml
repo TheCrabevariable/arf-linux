@@ -450,7 +450,13 @@ Scope {
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
                   text: SystemInfo.cpuUsage
-                  color: root.theme.textPrimary
+                  color: {
+                    const val = parseInt(SystemInfo.cpuUsage);
+                    if (isNaN(val)) return root.theme.textPrimary;
+                    if (val > 70) return root.theme.accentRed;
+                    if (val > 40) return root.theme.accentOrange;
+                    return root.theme.textPrimary;
+                  }
                   font.pixelSize: 11
                   font.family: root.font
                 }

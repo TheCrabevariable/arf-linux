@@ -1,6 +1,11 @@
 # Base live environment
+base
 archiso
 archinstall
+mkinitcpio-archiso
+squashfs-tools
+amd-ucode
+intel-ucode
 bash
 btrfs-progs
 coreutils
@@ -10,7 +15,6 @@ efibootmgr
 git
 grub
 os-prober
-# TUI prompting (whiptail is included in newt)
 iptables-nft
 linux
 linux-firmware
@@ -28,3 +32,6 @@ iwd
 wpa_supplicant
 xfsprogs
 power-profiles-daemon
+pacman-mirrorlist
+reflector
+gum

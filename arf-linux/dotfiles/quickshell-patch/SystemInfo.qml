@@ -133,10 +133,10 @@ Singleton {
     }
   }
 
-  // Temperature
+  // Temperature (lm-sensors → sysfs fallback)
   Process {
     id: tempProc
-    command: ["sh", "-c", "sensors 2>/dev/null | grep -E 'Package id 0|Tctl' | head -1 | awk '{print $2}' | sed 's/+//' || echo 'N/A'"]
+    command: ["sh", "-c", "val=$(sensors 2>/dev/null | grep -oP '\\+[0-9.]+[°]?C' | head -1 | tr -d '+'); [ -n \"$val\" ] && echo \"$val\" || { val=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | head -1); [ -n \"$val\" ] && [ \"$val\" -gt 0 ] 2>/dev/null && echo \"$((val/1000))°C\" || echo \"N/A\"; }"]
     running: true
 
     stdout: StdioCollector {

@@ -2,42 +2,32 @@
 set -euo pipefail
 
 # ── arf-linux installer (runs from live ISO) ──────────────────
+# Uses gum for all interactive prompts (handles serial console properly)
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
-info()  { printf "${CYAN}::${NC} %s\n" "$*"; }
-ok()    { printf "${GREEN}==>${NC} %s\n" "$*"; }
-err()   { printf "${RED}==>${NC} %s\n" "$*" >&2; exit 1; }
+info()  { gum style ":: $*" --foreground "#00ffff"; }
+ok()    { gum style "==> $*" --foreground "#00ff00" --bold; }
+err()   { gum style "==> $*" --foreground "#ff0000" --bold >&2; exit 1; }
 
-clear
-echo "============================================"
-echo "         arf-linux Installer"
-echo "============================================"
-echo ""
+gum style --border double --padding "1 2" --foreground "#00ffff" --bold "arf-linux Installer"
 
-# ── Detect arf-linux source
+# ── Detect arf-linux source ───────────────────────────────────
 ARF_SRC="/opt/arf-linux"
 if [ ! -d "$ARF_SRC" ]; then
   err "arf-linux source not found at /opt/arf-linux. Rebuild the ISO with the source bundled."
 fi
 
-# ── Collect info ─────────────────────────────────────────────
-echo "Available disks:"
-lsblk -d -o NAME,SIZE,MODEL | grep -v loop
-echo ""
-
-echo -n "Install to which disk (e.g. /dev/sda): "; read -r DISK
-[ -z "$DISK" ] && err "Disk required"
+# ── Disk selection ────────────────────────────────────────────
+DISK=$(lsblk -dpno NAME,SIZE,MODEL | grep -v loop | gum choose --header "Select install disk" | awk '{print $1}')
+[ -z "$DISK" ] && err "No disk selected"
 [ ! -b "$DISK" ] && err "Not a block device: $DISK"
 
-# ── WiFi setup ───────────────────────────────────────────────
+# ── WiFi setup ────────────────────────────────────────────────
 if command -v nmcli &>/dev/null && nmcli radio wifi | grep -q enabled; then
-  echo ""
   info "Scanning for WiFi networks..."
   nmcli dev wifi list --rescan yes 2>/dev/null | head -40 || true
-  echo ""
-  echo -n "Connect to WiFi? (SSID, or leave blank to skip): "; read -r WIFI_SSID
+  WIFI_SSID=$(gum input --placeholder "SSID or leave blank to skip" --prompt "WiFi SSID> ")
   if [ -n "$WIFI_SSID" ]; then
-    echo -n "WiFi password: "; read -rs WIFI_PASS; echo ""
+    WIFI_PASS=$(gum input --password --placeholder "Password" --prompt "WiFi password> ")
     info "Connecting to ${WIFI_SSID}..."
     nmcli dev wifi connect "$WIFI_SSID" password "$WIFI_PASS" 2>&1 || err "Failed to connect to WiFi"
     ok "Connected to ${WIFI_SSID}"
@@ -46,29 +36,38 @@ else
   info "No WiFi device detected — will use Ethernet (if available)"
 fi
 
-echo ""
-echo -n "Hostname: "; read -r HOSTNAME; [ -z "$HOSTNAME" ] && err "Hostname required"
-echo -n "Username: "; read -r USERNAME; [ -z "$USERNAME" ] && err "Username required"
-echo -n "Password: "; read -rs PASSWORD; echo ""; [ -z "$PASSWORD" ] && err "Password required"
-echo -n "Timezone (e.g. America/New_York): "; read -r TIMEZONE; [ -z "$TIMEZONE" ] && err "Timezone required"
-echo ""
-echo -n "Filesystem [btrfs/ext4]: "; read -r FS_CHOICE
-[ -z "$FS_CHOICE" ] && FS_CHOICE="btrfs"
-[ "$FS_CHOICE" != "btrfs" ] && [ "$FS_CHOICE" != "ext4" ] && err "Invalid choice: $FS_CHOICE"
+# ── User info ─────────────────────────────────────────────────
+HOSTNAME=$(gum input --placeholder "myhostname" --prompt "Hostname> " --value "arf-pc")
+[ -z "$HOSTNAME" ] && err "Hostname required"
 
-echo ""
-echo "⚠️  THIS WILL WIPE ALL DATA ON $DISK"
-echo -n "Type YES to continue: "; read -r confirm
-[ "$confirm" != "YES" ] && err "Aborted"
-echo ""
+USERNAME=$(gum input --placeholder "username" --prompt "Username> ")
+[ -z "$USERNAME" ] && err "Username required"
 
-# ── Detect SSD & partition prefix ────────────────────────────
+PASSWORD=$(gum input --password --prompt "Password> ")
+[ -z "$PASSWORD" ] && err "Password required"
+
+TIMEZONE=$(timedatectl list-timezones 2>/dev/null | gum filter --placeholder "Type to search..." --header "Select timezone" --height 15)
+if [ -z "$TIMEZONE" ]; then
+  TIMEZONE=$(gum input --placeholder "America/New_York" --prompt "Timezone> ")
+fi
+[ -z "$TIMEZONE" ] && err "Timezone required"
+
+# ── Mirrorlist optimization ────────────────────────────────────
+info "Optimizing mirrorlist for your location..."
+reflector --latest 20 --sort rate --save /etc/pacman.d/mirrorlist 2>&1 || info "Mirrorlist optimization skipped (no internet?)"
+ok "Mirrorlist optimized"
+
+FS_CHOICE=$(gum choose "btrfs" "ext4" --header "Filesystem")
+
+# ── Confirmation ──────────────────────────────────────────────
+gum confirm --affirmative "Yes, wipe it" --negative "Abort" "⚠️  THIS WILL WIPE ALL DATA ON $DISK" || err "Aborted by user"
+
+# ── Detect SSD & partition prefix ─────────────────────────────
 IS_SSD=false
 DISK_NAME="$(basename "$DISK")"
 if [ -f "/sys/block/$DISK_NAME/queue/rotational" ]; then
   [ "$(cat "/sys/block/$DISK_NAME/queue/rotational")" = "0" ] && IS_SSD=true
 fi
-# NVMe/MMC need 'p' prefix before partition numbers (e.g. nvme0n1p1, mmcblk0p1)
 case "$DISK_NAME" in
   nvme*|mmcblk*) PART_PREFIX="p" ;;
   *)             PART_PREFIX="" ;;
@@ -81,16 +80,19 @@ info "Partitioning $DISK..."
 parted -s "$DISK" mklabel gpt
 parted -s "$DISK" mkpart primary fat32 1MiB 1025MiB
 parted -s "$DISK" set 1 esp on
+sleep 1
+partprobe "$DISK" 2>/dev/null || true
 
 if [ "$FS_CHOICE" = "btrfs" ]; then
   parted -s "$DISK" mkpart primary btrfs 1025MiB 100%
+  sleep 1
+  partprobe "$DISK" 2>/dev/null || true
   info "Formatting partitions..."
   mkfs.fat -F32 "$PART1"
+  wipefs -a "$PART2" 2>/dev/null || true
   mkfs.btrfs -f "$PART2"
   mount "$PART2" /mnt
-  echo ""
-  echo -n "Create subvolumes (@, @home, @snapshots)? [Y/n]: "; read -r BTRFS_SUBVOL
-  if [ -z "$BTRFS_SUBVOL" ] || [ "$BTRFS_SUBVOL" = "y" ] || [ "$BTRFS_SUBVOL" = "Y" ]; then
+  if gum confirm "Create subvolumes (@, @home, @snapshots)?" --default=true; then
     btrfs subvolume create /mnt/@
     btrfs subvolume create /mnt/@home
     btrfs subvolume create /mnt/@snapshots
@@ -99,9 +101,8 @@ if [ "$FS_CHOICE" = "btrfs" ]; then
     mkdir -p /mnt/{home,.snapshots}
     mount -o subvol=@home,compress=zstd "$PART2" /mnt/home
     mount -o subvol=@snapshots,compress=zstd "$PART2" /mnt/.snapshots
-    echo -n "Configure snapper snapshots for @ (/) and @home? [Y/n]: "; read -r SETUP_SNAPSHOTS
-    if [ -z "$SETUP_SNAPSHOTS" ] || [ "$SETUP_SNAPSHOTS" = "y" ] || [ "$SETUP_SNAPSHOTS" = "Y" ]; then
-      SNAPPER_PKG=', "snapper"'
+    if gum confirm "Configure snapper snapshots?" --default=true; then
+      SNAPPER_PKG=1
     else
       SNAPPER_PKG=''
     fi
@@ -113,8 +114,11 @@ if [ "$FS_CHOICE" = "btrfs" ]; then
 else
   SNAPPER_PKG=''
   parted -s "$DISK" mkpart primary ext4 1025MiB 100%
+  sleep 1
+  partprobe "$DISK" 2>/dev/null || true
   info "Formatting partitions..."
   mkfs.fat -F32 "$PART1"
+  wipefs -a "$PART2" 2>/dev/null || true
   mkfs.ext4 -F "$PART2"
   mount "$PART2" /mnt
 fi
@@ -124,76 +128,58 @@ mount "$PART1" /mnt/boot
 
 ok "Partitions created and mounted"
 
-# ── Generate archinstall configs ──────────────────────────────
-info "Generating archinstall configuration..."
+# ── Install base system ───────────────────────────────────────
+info "Installing base system via pacstrap..."
 
-mkdir -p /tmp/arf-config
-
-DISK_CONFIG='{
-    "config_type": "pre_mounted_config",
-    "mountpoint": "/mnt"
-}'
-
-cat > /tmp/arf-config/user_configuration.json <<EOF
-{
-  "additional-repositories": [],
-  "archinstall-language": "English",
-  "audio_config": { "audio": "pipewire" },
-  "bootloader": "grub",
-  "config_version": 2,
-  "debug": false,
-  "disk_config": ${DISK_CONFIG},
-  "hostname": "${HOSTNAME}",
-  "kernels": ["linux"],
-  "locale_config": {
-    "kb_layout": "us",
-    "sys_enc": "UTF-8",
-    "sys_layout": "en_US.UTF-8"
-  },
-  "mirror_config": {
-    "mirror_regions": { "Worldwide": ["auto"] }
-  },
-  "network_config": { "type": "nm" },
-  "ntp": true,
-  "packages": ["base-devel", "git", "btop"${SNAPPER_PKG}],
-  "profile_config": { "profile": null },
-  "script": "guided",
-  "silent": true,
-  "swap": true,
-  "timezone": "${TIMEZONE}",
-  "version": 2.5,
-  "users": {
-    "${USERNAME}": {
-      "password": "${PASSWORD}",
-      "sudo": true
-    }
-  }
-}
-EOF
-
-cat > /tmp/arf-config/user_credentials.json <<EOF
-{
-  "root": { "password": "${PASSWORD}" },
-  "users": {
-    "${USERNAME}": { "password": "${PASSWORD}" }
-  }
-}
-EOF
-
-# ── Run archinstall ───────────────────────────────────────────
-info "Running archinstall..."
-cd /tmp/arf-config
-archinstall --config user_configuration.json \
-            --creds user_credentials.json \
-            --silent 2>&1 | tee /tmp/arf-install.log
-
-if [ $? -ne 0 ]; then
-  err "archinstall failed. Check /tmp/arf-install.log"
+PACSTRAP_PKGS=(
+  base linux linux-firmware
+  base-devel
+  grub efibootmgr
+  sudo networkmanager
+  git btop
+  reflector
+  zsh
+)
+if [ -n "${SNAPPER_PKG:-}" ]; then
+  PACSTRAP_PKGS+=(snapper)
 fi
+
+pacstrap -K /mnt "${PACSTRAP_PKGS[@]}"
 ok "Base system installed"
 
-# ── Persist WiFi connection to installed system ──────────────
-if [ -n "${WIFI_SSID:-}" ] && [ -d /mnt/etc/NetworkManager/system-connections ]; then
+# ── Configure installed system ────────────────────────────────
+info "Configuring installed system..."
+
+genfstab -U /mnt >> /mnt/etc/fstab
+
+arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
+arch-chroot /mnt hwclock --systohc
+
+sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /mnt/etc/locale.gen
+arch-chroot /mnt locale-gen
+echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
+
+echo "$HOSTNAME" > /mnt/etc/hostname
+cat > /mnt/etc/hosts <<HOSTS
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
+HOSTS
+
+echo "root:$PASSWORD" | arch-chroot /mnt chpasswd
+arch-chroot /mnt useradd -m -G wheel -s /bin/zsh "$USERNAME"
+echo "$USERNAME:$PASSWORD" | arch-chroot /mnt chpasswd
+echo "%wheel ALL=(ALL:ALL) ALL" > /mnt/etc/sudoers.d/10-wheel
+
+arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+arch-chroot /mnt mkinitcpio -P
+arch-chroot /mnt systemctl enable NetworkManager
+
+ok "Base system configured"
+
+# ── Persist WiFi connection ───────────────────────────────────
+if [ -n "${WIFI_SSID:-}" ]; then
   info "Copying WiFi connection to installed system..."
   WIFI_UUID="$(nmcli -t -f UUID,DEVICE,TYPE conn show --active 2>/dev/null | grep -F ':wifi' | cut -d: -f1 | head -1)" || true
   nmcli connection export "${WIFI_UUID:-$WIFI_SSID}" /tmp/arf-wifi.nmconnection 2>/dev/null || true
@@ -205,7 +191,7 @@ if [ -n "${WIFI_SSID:-}" ] && [ -d /mnt/etc/NetworkManager/system-connections ];
   fi
 fi
 
-# ── Copy arf-linux to installed system ───────────────────────
+# ── Copy arf-linux to installed system ────────────────────────
 info "Copying arf-linux to installed system..."
 mkdir -p /mnt/home/${USERNAME}/arf-linux
 cp -r "$ARF_SRC"/* /mnt/home/${USERNAME}/arf-linux/
@@ -215,7 +201,6 @@ chown -R 1000:1000 /mnt/home/${USERNAME}/arf-linux 2>/dev/null || true
 info "Setting up auto-stage2 on first boot..."
 mkdir -p /mnt/etc/systemd/system
 
-# Write username for stage2 to use
 echo "USERNAME=${USERNAME}" > /mnt/etc/arf-linux.env
 
 cat > /mnt/etc/systemd/system/arf-stage2.service <<SERVICE
@@ -238,19 +223,26 @@ SERVICE
 mkdir -p /mnt/etc/systemd/system/multi-user.target.wants
 ln -sf /etc/systemd/system/arf-stage2.service /mnt/etc/systemd/system/multi-user.target.wants/arf-stage2.service
 
+# ── Copy bundled SDDM theme to installed system ──────────────
+if [ -d /usr/share/sddm/themes/sddm-flower-theme ]; then
+  mkdir -p /mnt/usr/share/sddm/themes/sddm-flower-theme
+  cp -r /usr/share/sddm/themes/sddm-flower-theme/* /mnt/usr/share/sddm/themes/sddm-flower-theme/
+  ok "Bundled SDDM theme copied to installed system"
+fi
+
 # ── Configure snapper snapshots ───────────────────────────────
-if [ -z "${SETUP_SNAPSHOTS:-}" ] || [ "$SETUP_SNAPSHOTS" = "y" ] || [ "$SETUP_SNAPSHOTS" = "Y" ]; then
+if [ -n "${SNAPPER_PKG:-}" ]; then
   info "Configuring snapper snapshots..."
   arch-chroot /mnt bash -c "
     snapper -c root create-config /
     snapper -c home create-config /home
     systemctl enable snapper-timeline.timer snapper-cleanup.timer
     systemctl enable snapper-boot.service
-  " 2>&1 | tee /tmp/arf-snapper.log || true
+  " 2>&1 || true
   ok "Snapper configured for @ (/) and @home"
 fi
 
-# ── Enable fstrim if SSD ─────────────────────────────────────
+# ── Enable fstrim if SSD ──────────────────────────────────────
 if [ "$IS_SSD" = true ]; then
   info "Enabling fstrim.timer (SSD detected)"
   ln -sf /usr/lib/systemd/system/fstrim.timer /mnt/etc/systemd/system/timers.target.wants/fstrim.timer 2>/dev/null || true
@@ -259,14 +251,20 @@ fi
 # ── Run stage2 in chroot ──────────────────────────────────────
 info "Running stage2 in chroot..."
 cp /etc/resolv.conf /mnt/etc/resolv.conf 2>/dev/null || true
-arch-chroot /mnt bash -c "
+if arch-chroot /mnt bash -c "
   export USERNAME=$USERNAME HOME=/home/$USERNAME
   bash /home/$USERNAME/arf-linux/install.sh --stage2
-  systemctl disable arf-stage2.service
-" 2>&1 | tee /tmp/arf-stage2.log || true
-ok "Stage2 complete (non-fatal errors logged to /tmp/arf-stage2.log)"
+  # Disable the first-boot service since we ran successfully in chroot
+  rm -f /etc/systemd/system/multi-user.target.wants/arf-stage2.service
+  rm -f /etc/systemd/system/arf-stage2.service
+  rm -f /etc/arf-linux.env
+" 2>&1; then
+  ok "Stage2 complete"
+else
+  gum style "Stage2 had some errors. The service will retry on first boot." --foreground yellow
+fi
 
-# ── Done ─────────────────────────────────────────────────────
+# ── Done ──────────────────────────────────────────────────────
 ok "Installation complete! Rebooting in 5 seconds..."
 sleep 5
 reboot
