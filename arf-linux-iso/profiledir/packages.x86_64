@@ -34,4 +34,5 @@ xfsprogs
 power-profiles-daemon
 pacman-mirrorlist
 reflector
+rsync
 gum

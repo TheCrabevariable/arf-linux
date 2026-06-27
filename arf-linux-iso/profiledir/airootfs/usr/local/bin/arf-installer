@@ -167,7 +167,7 @@ cat > /mnt/etc/hosts <<HOSTS
 HOSTS
 
 echo "root:$PASSWORD" | arch-chroot /mnt chpasswd
-arch-chroot /mnt useradd -m -G wheel -s /bin/zsh "$USERNAME"
+arch-chroot /mnt useradd -m -G wheel,video,input -s /bin/zsh "$USERNAME"
 echo "$USERNAME:$PASSWORD" | arch-chroot /mnt chpasswd
 echo "%wheel ALL=(ALL:ALL) ALL" > /mnt/etc/sudoers.d/10-wheel
 
