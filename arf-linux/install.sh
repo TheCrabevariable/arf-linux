@@ -254,6 +254,9 @@ SDDM
   systemctl enable grub-btrfsd 2>/dev/null || true
   ok "GRUB configured"
 
+  # Fix any root-owned files in $USER_HOME (mkdir/cp as root in chroot)
+  chown -R "$USERNAME:" "$USER_HOME" 2>/dev/null || true
+
   ok "Stage 2 complete!"
 
   # If running via the ISO automated flow, reboot automatically
