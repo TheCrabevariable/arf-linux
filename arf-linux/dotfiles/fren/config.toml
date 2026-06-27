@@ -1,0 +1,29 @@
+[keybinds]
+quit = "q"
+open = "enter"
+focus = "tab"
+copy = "c"
+cut = "x"
+paste = "v"
+trash = "d"
+sort = "s"
+toggle_hidden = "."
+create_file = "n"
+create_folder = "f"
+rename = "r"
+pin = "u"
+unpin = "i"
+go_to = "m"
+toggle_select = " "
+
+[settings]
+remember = true
+
+[quick_apps]
+default = "xdg-open"
+terminal = "kitty"
+editor = "zeditor"
+code = "nano"
+browser = "helium-browser"
+video = "mpv"
+docs = "zathura"
