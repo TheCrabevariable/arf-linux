@@ -24,6 +24,6 @@ alias remove="sudo pacman -Rns"
 alias clean="sudo pacman -Scc"
 alias ff="fastfetch"
 
-# Fren icons (nerd mode; needs Nerd Font installed — we install ttf-hack-nerd)
-export FREN_ICON_MODE=nerd
+# Fren emoji icons
+export FREN_ICON_MODE=emoji
 export TERMINAL=kitty

@@ -2,7 +2,6 @@
 title-text: ""
 title-font: "Hack Regular 12"
 title-color: "#7aa2f7"
-title-align: "right"
 desktop-image: "fgrub.png"
 desktop-color: "#1a1b26"
 terminal-font: "Hack Regular 12"
