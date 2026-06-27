@@ -92,7 +92,7 @@ stage2() {
   OFFICIAL=(
     hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
     zed steam kitty fastfetch rmpc mpd networkmanager zsh python
-    quickshell ttf-hack-nerd sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
+    quickshell ttf-hack-nerd ttf-nerd-fonts-symbols sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors breeze-cursors
     pipewire pipewire-pulse wireplumber power-profiles-daemon inotify-tools rsync
     xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar grub-btrfs flatpak flatpak-xdg-utils
