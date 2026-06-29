@@ -21,10 +21,10 @@ Singleton {
   property string bluetoothInfo: "Off"
   property string powerProfile: "balanced"
 
-  // CPU Usage
+  // CPU Usage (reads /proc/stat — no process iteration, orders of magnitude cheaper than top)
   Process {
     id: cpuProc
-    command: ["sh", "-c", "top -bn1 | grep 'Cpu(s)' | sed 's/.*,\\s*\\([0-9.]*\\)%* id.*/\\1/' | awk '{print 100 - $1\"%\"}'"]
+    command: ["sh", "-c", "grep '^cpu ' /proc/stat | awk '{used=$2+$3+$4+$6+$7+$8; total=used+$5; printf \"%.0f%%\", used*100/total}'"]
     running: true
 
     stdout: StdioCollector {
@@ -146,19 +146,26 @@ Singleton {
     }
   }
 
-  // Update timer
+  // Update timer (5s for CPU/mem/temp/power, 10s for network/bt/battery)
   Timer {
-    interval: 2000
+    interval: 5000
     running: true
     repeat: true
     onTriggered: {
       cpuProc.running = true
       memProc.running = true
+      tempProc.running = true
+      powerProfileProc.running = true
+    }
+  }
+  Timer {
+    interval: 10000
+    running: true
+    repeat: true
+    onTriggered: {
       netProc.running = true
       btProc.running = true
-      powerProfileProc.running = true
       batteryProc.running = true
-      tempProc.running = true
     }
   }
 }

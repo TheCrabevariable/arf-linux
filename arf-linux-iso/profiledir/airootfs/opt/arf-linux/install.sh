@@ -92,9 +92,9 @@ stage2() {
   OFFICIAL=(
     hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
     zed steam kitty fastfetch rmpc mpd networkmanager zsh python
-    quickshell ttf-hack-nerd sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
+    quickshell ttf-hack-nerd ttf-nerd-fonts-symbols noto-fonts-emoji sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors breeze-cursors
-    pipewire pipewire-pulse wireplumber power-profiles-daemon inotify-tools
+    pipewire pipewire-pulse wireplumber power-profiles-daemon inotify-tools rsync
     xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar grub-btrfs flatpak flatpak-xdg-utils
   )
 
@@ -207,14 +207,17 @@ stage2() {
   else
     sudo git clone --depth 1 https://github.com/keyitdev/sddm-flower-theme.git /usr/share/sddm/themes/sddm-flower-theme 2>/dev/null && SDDM_THEME="sddm-flower-theme" || info "SDDM theme download failed, using $SDDM_THEME"
   fi
-  if [ "$SDDM_THEME" = "sddm-flower-theme" ] && [ -f /usr/share/sddm/themes/arf/background.jpg ]; then
-    sudo cp /usr/share/sddm/themes/arf/background.jpg /usr/share/sddm/themes/sddm-flower-theme/background.jpg 2>/dev/null || true
-    # Apply Tokyo Night colors
+  if [ "$SDDM_THEME" = "sddm-flower-theme" ]; then
+    # Apply Tokyo Night colors (always, regardless of wallpaper)
     sudo sed -i \
       's/^MainColor=.*/MainColor="#c0caf5"/' \
       's/^AccentColor=.*/AccentColor="#7aa2f7"/' \
       's/^BackgroundColor=.*/BackgroundColor="#1a1b26"/' \
       /usr/share/sddm/themes/sddm-flower-theme/theme.conf 2>/dev/null || true
+    # Copy wallpaper if available
+    if [ -f /usr/share/sddm/themes/arf/background.jpg ]; then
+      sudo cp /usr/share/sddm/themes/arf/background.jpg /usr/share/sddm/themes/sddm-flower-theme/Backgrounds/background.png 2>/dev/null || true
+    fi
   fi
   # Fallback: use a built-in theme if flower theme wasn't installed
   if [ ! -f "/usr/share/sddm/themes/$SDDM_THEME/theme.conf" ]; then
@@ -250,6 +253,9 @@ SDDM
   grub-mkconfig -o /boot/grub/grub.cfg
   systemctl enable grub-btrfsd 2>/dev/null || true
   ok "GRUB configured"
+
+  # Fix any root-owned files in $USER_HOME (mkdir/cp as root in chroot)
+  chown -R "$USERNAME:" "$USER_HOME" 2>/dev/null || true
 
   ok "Stage 2 complete!"
 

@@ -374,7 +374,7 @@ Scope {
             width: brightContent.width + 12
             radius: 12
             color: root.theme.bgSurface
-            visible: brightnessFile.path !== ""
+            visible: true
 
             Accessible.role: Accessible.StaticText
             Accessible.name: "Brightness: " + Math.round(root.brightnessValue * 100) + "%"
