@@ -23,6 +23,8 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("hyprctl setcursor breeze_cursors 24")
   hl.exec_cmd("hyprpaper")
   hl.exec_cmd("udiskie -t")
+  hl.exec_cmd("nm-applet")
+  hl.exec_cmd("blueman-applet")
   -- Input config (hl.config uses native Lua — no legacy parser needed)
   hl.config({
     input = {
