@@ -116,7 +116,7 @@ stage2() {
   AUR=(
     helium-browser-bin
     animu-bin
-    fren-git
+    fren-bin
     heroic-games-launcher-bin
     wlogout
   )
