@@ -96,6 +96,7 @@ stage2() {
     bluetui bluez bluez-utils playerctl brightnessctl lm_sensors breeze-cursors
     pipewire pipewire-pulse wireplumber power-profiles-daemon inotify-tools rsync
     xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar grub-btrfs flatpak flatpak-xdg-utils
+    network-manager-applet nwg-look
   )
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
@@ -119,6 +120,7 @@ stage2() {
     fren-git
     heroic-games-launcher-bin
     wlogout
+    tokyonight-gtk-theme-git
   )
 
   for aur_pkg in "${AUR[@]}"; do
