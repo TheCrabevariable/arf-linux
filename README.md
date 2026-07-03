@@ -1,16 +1,17 @@
 # arf-linux
 
-Arch Linux automated installer ISO with Hyprland, Quickshell Tokyo Night bar, and one-shot post-install configuration.
+Arch Linux automated installer ISO with Hyprland, Quickshell Tokyo Night bar, and single-reboot post-install configuration.
 
 ## Features
 
-- **Automated install** — interactive archinstall-based stage1 with disk selection, user setup, timezone
-- **Tokyo Night theme** — dark theme across bar, kitty, fastfetch, fren, btop, zed, hyprlock, SDDM
-- **Quickshell bar** — with app launcher (SUPER+R), theme switcher (SUPER+T), monitor manager (SUPER+D), power profile indicator
-- **Hyprland** with Lua config (hyprland.lua) + minimal legacy parser for keyboard input (hyprland.conf)
-- **BTRFS** filesystem with zstd compression
+- **Automated install** — interactive stage1 with disk selection, user setup, timezone
+- **Single reboot** — stage2 can run in chroot during install, or on first boot via systemd oneshot
+- **Tokyo Night theme** — dark theme across bar, kitty, fastfetch, fren, btop, zed, hyprlock, SDDM, GRUB
+- **Quickshell bar** — app launcher (SUPER+R), theme switcher (SUPER+T), monitor manager (SUPER+D), power menu (SUPER+ESC), clickable WiFi/BT/power profile pills, color-coded CPU
+- **Hyprland** with Lua config (hyprland.lua) + minimal legacy parser (hyprland.conf)
+- **BTRFS** filesystem with zstd compression (ext4 also available)
 - **WiFi config** — prompted during install, persisted to installed system
-- **Stage2 auto-config** — dotfiles, AUR packages, flatpaks, wallpapers run on first boot via systemd oneshot
+- **Stage2 auto-config** — dotfiles, AUR packages, flatpaks, wallpapers run on first boot
 
 ## Repository Structure
 
@@ -41,8 +42,8 @@ Requires `archiso` on an Arch Linux system. Output: `out/arf-linux-<date>-x86_64
 1. Write ISO to USB: `sudo dd if=arf-linux-<date>-x86_64.iso of=/dev/sdX bs=4M status=progress && sync`
 2. Boot from USB — `arf-installer` auto-launches
 3. Follow prompts: disk → WiFi (optional) → hostname/user/password/timezone → confirm wipe
-4. Reboot → stage2 auto-runs (systemd oneshot) → final reboot → SDDM → Hyprland + Quickshell bar
-   - Optionally run stage2 in chroot before first reboot to save one reboot
+4. Reboot → SDDM → Hyprland + Quickshell bar (stage2 runs as systemd oneshot on first boot)
+   - Or run `arf-installer --chroot` during install to run stage2 before first reboot (saves one reboot)
 
 ## Screenshots
 
@@ -57,6 +58,7 @@ Requires `archiso` on an Arch Linux system. Output: `out/arf-linux-<date>-x86_64
 | SUPER + R | App launcher (Quickshell) |
 | SUPER + T | Theme switcher (Quickshell) |
 | SUPER + D | Monitor manager (Quickshell) |
+| SUPER + ESC | Power menu |
 | SUPER + C | Close window |
 | SUPER + M | Exit Hyprland |
 | SUPER + V | Toggle window float |
@@ -83,5 +85,5 @@ Stage2 installs:
 - **Flatpaks:** Heroic Game Launcher
 - **Dotfiles:** hyprland, kitty, btop, fastfetch, fren, zed, zsh, rmpc
 - **Wallpapers:** cloned from [TheCrabevariable/Wallpaper](https://github.com/TheCrabevariable/Wallpaper)
-- **SDDM theme:** flower theme
-- **Quickshell patches:** MonitorManager workaround for Hyprland Lua config
+- **SDDM theme:** flower theme with Tokyo Night colors
+- **Customizations:** kitty with inline Tokyo Night colors, QS with /proc/stat CPU, disk-cached image previews, session remember, wifi/bt/power profile toggles
