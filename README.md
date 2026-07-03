@@ -28,7 +28,11 @@ arf-linux-iso/           # ISO build profile
     airootfs/usr/local/bin/arf-installer  # Stage1 installer (auto-launched on boot)
 ```
 
-## Build the ISO
+## Download
+
+Pre-built ISOs are available from the [releases page](https://github.com/TheCrabevariable/arf-linux/releases) (recommended).
+
+## Build from source
 
 ```sh
 cd arf-linux-iso
