@@ -44,6 +44,7 @@ wlr-randr
 os-prober
 bazaar
 grub-btrfs
+libreoffice-fresh
 flatpak
 flatpak-xdg-utils
 
