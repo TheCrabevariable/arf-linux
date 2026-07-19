@@ -28,6 +28,7 @@ bluetui
 bluez
 bluez-utils
 playerctl
+btop
 brightnessctl
 lm_sensors
 pipewire
