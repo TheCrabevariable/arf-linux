@@ -37,6 +37,7 @@ power-profiles-daemon
 inotify-tools
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
+gvfs
 udisks2
 udiskie
 wlr-randr
