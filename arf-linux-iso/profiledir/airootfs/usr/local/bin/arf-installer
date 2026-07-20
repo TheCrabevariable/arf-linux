@@ -128,11 +128,15 @@ mount "$PART1" /mnt/boot
 
 ok "Partitions created and mounted"
 
+# ── Kernel selection ──────────────────────────────────────────
+KERNEL=$(gum choose --header "Choose kernel" "linux" "linux-zen")
+[ -z "$KERNEL" ] && KERNEL="linux"
+
 # ── Install base system ───────────────────────────────────────
 info "Installing base system via pacstrap..."
 
 PACSTRAP_PKGS=(
-  base linux linux-firmware
+  base "$KERNEL" linux-firmware
   base-devel
   grub efibootmgr
   sudo networkmanager
