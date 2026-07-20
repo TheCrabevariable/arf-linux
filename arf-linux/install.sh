@@ -179,6 +179,8 @@ stage2() {
   touch "$USER_HOME/.config/mpd/database"
   chown -R "$USERNAME:" "$USER_HOME/.config/mpd" 2>/dev/null || true
 
+  xdg-user-dirs-update 2>/dev/null || true
+
   # Note: quickshell config is bundled pre-patched via build.sh
 
   # ── Wallpapers ──────────────────────────────────────────────────
