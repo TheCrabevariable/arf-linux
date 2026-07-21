@@ -2,10 +2,8 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
-import Quickshell.Services.Notifications
 import QtQuick
 import QtQuick.Layouts
-import "../notifications"
 
 PanelWindow {
     id: root
@@ -13,15 +11,7 @@ PanelWindow {
     property var theme: DefaultTheme {}
     property string font: "Hack Nerd Font"
     property var hiddenSeqIds: []
-
-    property bool dndEnabled: typeof NotificationService !== "undefined" ? NotificationService.doNotDisturb : false
-    property int notifCount: typeof NotificationService !== "undefined" ? NotificationService.count : 0
-    property var filteredNotifications: {
-        if (typeof NotificationService === "undefined") return [];
-        return NotificationService.notifications.filter(function(n) {
-            return !root.hiddenSeqIds.includes(n.seqId);
-        });
-    }
+    property var notifications: []
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -41,12 +31,44 @@ PanelWindow {
         target: "notification-center"
         function toggle(): void {
             root.visible = !root.visible
+            if (root.visible) refreshNotifs()
         }
     }
 
-    function hideNotif(seqId): void {
-        root.hiddenSeqIds = [...root.hiddenSeqIds, seqId];
+    FileView {
+        path: "/tmp/quickshell-notifs.json"
+        watchChanges: true
+        onFileChanged: refreshNotifs()
     }
+
+    function refreshNotifs() {
+        readFileProc.running = true
+    }
+
+    Process {
+        id: readFileProc
+        command: ["cat", "/tmp/quickshell-notifs.json"]
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    var parsed = JSON.parse(data)
+                    root.notifications = parsed
+                } catch(e) {}
+            }
+        }
+    }
+
+    function getVisibleNotifs() {
+        return root.notifications.filter(function(n) {
+            return !root.hiddenSeqIds.includes(n.seqId);
+        })
+    }
+
+    function hideNotif(seqId) {
+        root.hiddenSeqIds = [...root.hiddenSeqIds, seqId]
+    }
+
+    Component.onCompleted: refreshNotifs()
 
     MouseArea {
         anchors.fill: parent
@@ -105,46 +127,15 @@ PanelWindow {
                     height: 20
                     radius: 10
                     color: theme.bgSurface
-                    visible: root.notifCount > 0
+                    visible: root.getVisibleNotifs().length > 0
 
                     Text {
                         id: countLabel
                         anchors.centerIn: parent
-                        text: root.notifCount
+                        text: root.getVisibleNotifs().length
                         color: theme.textMuted
                         font.pixelSize: 11
                         font.family: root.font
-                    }
-                }
-
-                // DND toggle pill
-                Rectangle {
-                    width: 40; height: 22; radius: 11
-                    color: root.dndEnabled ? theme.accentRed : theme.bgSurface
-                    border.color: theme.bgBorder; border.width: 1
-
-                    Rectangle {
-                        x: root.dndEnabled ? 20 : 2
-                        width: 18; height: 18; radius: 9
-                        color: root.dndEnabled ? theme.bgBase : theme.textMuted
-                        Behavior on x { NumberAnimation { duration: 150 } }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: dndToggleProc.running = true
-                    }
-
-                    Process {
-                        id: dndToggleProc
-                        command: ["qs", "ipc", "call", "notifications", "dnd-toggle"]
-                        onRunningChanged: {
-                            if (!running) {
-                                root.dndEnabled = typeof NotificationService !== "undefined"
-                                    ? NotificationService.doNotDisturb : root.dndEnabled;
-                            }
-                        }
                     }
                 }
 
@@ -152,7 +143,7 @@ PanelWindow {
                 Rectangle {
                     width: 28; height: 28; radius: 8
                     color: clearAllArea.containsMouse ? theme.bgHover : "transparent"
-                    visible: root.notifCount > 0
+                    visible: root.getVisibleNotifs().length > 0
 
                     Text {
                         anchors.centerIn: parent
@@ -180,7 +171,10 @@ PanelWindow {
             // ======== COUNT TEXT ========
 
             Text {
-                text: root.notifCount === 0 ? "No notifications" : root.notifCount + " notification" + (root.notifCount !== 1 ? "s" : "")
+                text: {
+                    var count = root.getVisibleNotifs().length
+                    return count === 0 ? "No notifications" : count + " notification" + (count !== 1 ? "s" : "")
+                }
                 color: theme.textMuted
                 font.pixelSize: 11
                 font.family: root.font
@@ -207,10 +201,7 @@ PanelWindow {
                 spacing: 8
                 boundsBehavior: Flickable.StopAtBounds
 
-                model: ScriptModel {
-                    values: root.filteredNotifications
-                    objectProp: "seqId"
-                }
+                model: root.getVisibleNotifs()
 
                 delegate: Rectangle {
                     id: notifCard
@@ -221,8 +212,7 @@ PanelWindow {
                     height: cardCol.implicitHeight + 24
                     radius: 12
                     color: notifCardArea.containsMouse ? theme.bgHover : theme.bgBase
-                    border.color: modelData.urgency === NotificationUrgency.Critical ? theme.urgencyCritical :
-                                  modelData.urgency === NotificationUrgency.Low     ? theme.urgencyLow     : theme.bgBorder
+                    border.color: theme.bgBorder
                     border.width: 1
                     clip: true
 
@@ -234,8 +224,7 @@ PanelWindow {
                         anchors.left: parent.left
                         anchors.leftMargin: 6
                         anchors.verticalCenter: parent.verticalCenter
-                        color: modelData.urgency === NotificationUrgency.Critical ? theme.urgencyCritical :
-                               modelData.urgency === NotificationUrgency.Low      ? theme.urgencyLow      : theme.urgencyNormal
+                        color: theme.urgencyNormal
                     }
 
                     ColumnLayout {
@@ -247,42 +236,21 @@ PanelWindow {
                         anchors.bottomMargin: 12
                         spacing: 6
 
-                        // App icon + name + dismiss
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
 
-                            Item {
-                                Layout.preferredWidth: 16
-                                Layout.preferredHeight: 16
-                                Layout.alignment: Qt.AlignVCenter
-
-                                IconImage {
-                                    anchors.centerIn: parent
-                                    source: Quickshell.iconPath(modelData.appIcon, true)
-                                    implicitSize: 16
-                                    visible: modelData.appIcon !== ""
+                            Text {
+                                text: {
+                                    const name = (modelData.appName || "").toLowerCase();
+                                    if (name.includes("discord"))  return "󰙯";
+                                    if (name.includes("firefox"))  return "󰈹";
+                                    if (name.includes("spotify"))  return "󰓇";
+                                    return "󰂚";
                                 }
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    visible: modelData.appIcon === ""
-                                    text: {
-                                        const name = (modelData.appName || "").toLowerCase();
-                                        if (modelData.urgency === NotificationUrgency.Critical) return "󰀦";
-                                        if (name.includes("discord"))  return "󰙯";
-                                        if (name.includes("firefox"))  return "󰈹";
-                                        if (name.includes("chrome"))   return "";
-                                        if (name.includes("telegram")) return "";
-                                        if (name.includes("spotify"))  return "󰓇";
-                                        if (name.includes("terminal") || name.includes("kitty") || name.includes("alacritty")) return "";
-                                        return "󰂚";
-                                    }
-                                    color: modelData.urgency === NotificationUrgency.Critical
-                                           ? theme.urgencyCritical : theme.urgencyNormal
-                                    font.pixelSize: 14
-                                    font.family: root.font
-                                }
+                                color: theme.urgencyNormal
+                                font.pixelSize: 14
+                                font.family: root.font
                             }
 
                             Text {
@@ -295,7 +263,6 @@ PanelWindow {
 
                             Item { Layout.fillWidth: true }
 
-                            // Dismiss button
                             Rectangle {
                                 width: 20; height: 20; radius: 10
                                 color: dismissHover.containsMouse ? theme.bgBorder : "transparent"
@@ -319,9 +286,8 @@ PanelWindow {
                             }
                         }
 
-                        // Summary
                         Text {
-                            text: modelData.summary
+                            text: modelData.summary || ""
                             color: theme.textPrimary
                             font.pixelSize: 13
                             font.family: root.font
@@ -331,9 +297,8 @@ PanelWindow {
                             visible: text !== ""
                         }
 
-                        // Body
                         Text {
-                            text: modelData.body
+                            text: modelData.body || ""
                             color: theme.textSecondary
                             font.pixelSize: 12
                             font.family: root.font
@@ -356,10 +321,9 @@ PanelWindow {
                     }
                 }
 
-                // Empty state
                 Text {
                     anchors.centerIn: parent
-                    text: root.dndEnabled ? "  Do Not Disturb is on" : "  No notifications"
+                    text: "  No notifications"
                     color: theme.textMuted
                     font.pixelSize: 13
                     font.family: root.font
