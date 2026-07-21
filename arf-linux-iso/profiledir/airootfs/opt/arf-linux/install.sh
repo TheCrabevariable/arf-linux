@@ -147,6 +147,7 @@ stage2() {
     ln -sf /usr/lib/systemd/user/pipewire-pulse.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/wireplumber.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/xdg-desktop-portal-hyprland.service ~/.config/systemd/user/default.target.wants/
+    ln -sf /usr/lib/systemd/user/mpd-mpris.service ~/.config/systemd/user/default.target.wants/
   "
 
   # ── Dotfiles ──────────────────────────────────────────────────

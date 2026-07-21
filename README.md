@@ -7,7 +7,7 @@ Arch Linux automated installer ISO with Hyprland, Quickshell Tokyo Night bar, an
 - **Automated install** — interactive stage1 with disk selection, user setup, timezone
 - **Single reboot** — stage2 can run in chroot during install, or on first boot via systemd oneshot
 - **Tokyo Night theme** — dark theme across bar, kitty, fastfetch, fren, btop, zed, hyprlock, SDDM, GRUB
-- **Quickshell bar** — app launcher (SUPER+R), theme switcher (SUPER+T), monitor manager (SUPER+D), power menu (SUPER+ESC), clickable WiFi/BT/power profile pills, color-coded CPU
+- **Quickshell bar** — app launcher (SUPER+R), theme switcher (SUPER+T), monitor manager (SUPER+D), power menu (SUPER+ESC), clickable WiFi/BT/power profile pills, color-coded CPU, clipboard manager, media player (mpd-mpris), calendar, audio mixer, notification center, network popup
 - **Hyprland** with Lua config (hyprland.lua) + minimal legacy parser (hyprland.conf)
 - **BTRFS** filesystem with zstd compression (ext4 also available)
 - **WiFi config** — prompted during install, persisted to installed system
@@ -20,7 +20,7 @@ arf-linux/               # Installer scripts, dotfiles, patches
   install.sh             # Stage2 post-install script (copied to installed system)
   packages.txt           # Official + AUR package list
   dotfiles/              # Default configs for hypr, kitty, btop, fastfetch, zsh, etc.
-    quickshell-patch/    # Applied after cloning quickshell-config from GitHub
+    quickshell-full/     # Full Quickshell config (menu, cliphist, mpd-mpris, etc.)
 arf-linux-iso/           # ISO build profile
   build.sh               # Builds the bootable ISO with archiso
   profiledir/            # archiso config, airootfs overlay, arf-installer
@@ -90,4 +90,4 @@ Stage2 installs:
 - **Dotfiles:** hyprland, kitty, btop, fastfetch, fren, zed, zsh, rmpc
 - **Wallpapers:** cloned from [TheCrabevariable/Wallpaper](https://github.com/TheCrabevariable/Wallpaper)
 - **SDDM theme:** flower theme with Tokyo Night colors
-- **Customizations:** kitty with inline Tokyo Night colors, QS with /proc/stat CPU, disk-cached image previews, session remember, wifi/bt/power profile toggles
+- **Customizations:** kitty with inline Tokyo Night colors, QS with /proc/stat CPU, disk-cached image previews, session remember, wifi/bt/power profile toggles, cliphist clipboard manager, mpd-mpris media bridge
