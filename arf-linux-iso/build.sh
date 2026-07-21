@@ -36,29 +36,20 @@ else
   rm -rf "$SDDM_DEST/sddm-flower-theme" 2>/dev/null || true
 fi
 
-# Bundle quickshell config (patched) so install doesn't need GitHub
+# Bundle quickshell config from dotfiles
 echo ":: Bundling Quickshell config..."
-QS_REPO="https://github.com/doannc2212/quickshell-config.git"
-QS_TMP=$(mktemp -d)
-if git clone --depth 1 "$QS_REPO" "$QS_TMP/quickshell" 2>/dev/null; then
-  sed -i 's/import "wallpaper"/\/\/import "wallpaper"/' "$QS_TMP/quickshell/shell.qml"
-  sed -i 's/WallpaperManager {/\/\/WallpaperManager {/' "$QS_TMP/quickshell/shell.qml"
-  for f in MonitorService.qml MonitorManager.qml; do
-    [ -f "$ARF_DEST/dotfiles/quickshell-patch/$f" ] && \
-      cp "$ARF_DEST/dotfiles/quickshell-patch/$f" "$QS_TMP/quickshell/monitor-manager/$f"
-  done
-  for f in SystemInfo.qml Bar.qml; do
-    [ -f "$ARF_DEST/dotfiles/quickshell-patch/$f" ] && \
-      cp "$ARF_DEST/dotfiles/quickshell-patch/$f" "$QS_TMP/quickshell/bar/$f"
-  done
+QS_SRC="$SCRIPT_DIR/../arf-linux/dotfiles/quickshell-full"
+if [ -d "$QS_SRC" ]; then
   sudo rm -rf "$ARF_DEST/dotfiles/quickshell" 2>/dev/null || true
-  cp -r "$QS_TMP/quickshell" "$ARF_DEST/dotfiles/quickshell"
+  cp -r "$QS_SRC" "$ARF_DEST/dotfiles/quickshell"
+  # Disable wallpaper manager (not bundled)
+  sed -i 's/import "wallpaper"/\/\/import "wallpaper"/' "$ARF_DEST/dotfiles/quickshell/shell.qml" 2>/dev/null || true
+  sed -i 's/WallpaperManager {/\/\/WallpaperManager {/' "$ARF_DEST/dotfiles/quickshell/shell.qml" 2>/dev/null || true
   echo ":: Quickshell config bundled"
 else
-  echo "!! Warning: could not clone quickshell-config (no internet?)"
+  echo "!! Warning: quickshell-full not found at $QS_SRC"
   echo "   Quickshell bar will fall back to patches only"
 fi
-rm -rf "$QS_TMP"
 
 # Clean previous build
 sudo rm -rf "$WORK_DIR" "$OUT_DIR" 2>/dev/null || true
