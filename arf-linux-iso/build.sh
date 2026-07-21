@@ -29,6 +29,7 @@ cp -r --no-preserve=mode,ownership,xattr "$SCRIPT_DIR/../arf-linux"/* "$ARF_DEST
 echo ":: Bundling SDDM theme..."
 SDDM_DEST="$PROFILE/airootfs/usr/share/sddm/themes"
 if git clone --depth 1 https://github.com/keyitdev/sddm-flower-theme.git "$SDDM_DEST/sddm-flower-theme" 2>/dev/null; then
+  rm -rf "$SDDM_DEST/sddm-flower-theme/.git"
   echo ":: SDDM theme bundled"
 else
   echo "!! Warning: could not clone SDDM theme (no internet?)"
