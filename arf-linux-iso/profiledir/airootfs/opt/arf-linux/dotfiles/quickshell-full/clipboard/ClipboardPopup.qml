@@ -28,97 +28,95 @@ PanelWindow {
     target: "clipboard"
     function toggle(): void {
       root.visible = !root.visible
-      if (root.visible) refreshClipboard()
+      if (root.visible) loadEntries()
     }
   }
 
-  property var clipboardEntries: []
+  property var entries: []
   property string searchText: ""
-  property bool showSearch: false
 
   property var filteredEntries: {
-    if (searchText.length === 0) return clipboardEntries
-    return clipboardEntries.filter(e => e.text.toLowerCase().includes(searchText.toLowerCase()))
+    if (searchText.length === 0) return entries
+    return entries.filter(e => e.text.toLowerCase().includes(searchText.toLowerCase()))
   }
 
-  function refreshClipboard() {
-    clipboardListProc.running = true
+  function loadEntries() {
+    entries = []
+    decodeAllProc.running = true
   }
 
-  function copyEntry(entryId) {
-    clipboardCopyProc.command = ["bash", "-c", "echo '" + entryId + "' | cliphist decode | wl-copy"]
-    clipboardCopyProc.running = true
+  function copyEntry(entryId, entryText) {
+    copyProc.command = ["bash", "-c", "printf '%s' '" + entryId + "' | cliphist decode | wl-copy"]
+    copyProc.running = true
+    notifyProc.command = ["notify-send", "-a", "Clipboard", "-i", "edit-copy", "Copied to clipboard", entryText.substring(0, 80)]
+    notifyProc.running = true
   }
 
   function deleteEntry(entryId) {
-    clipboardDeleteProc.command = ["cliphist", "delete", entryId]
-    clipboardDeleteProc.running = true
-    refreshClipboard()
+    delProc.command = ["cliphist", "delete", entryId]
+    delProc.running = true
+    loadEntries()
+  }
+
+  Process {
+    id: decodeAllProc
+    command: ["bash", "-c", "rm -f /tmp/cliphist-preview-*.png 2>/dev/null; cliphist list | while IFS= read -r line; do id=$(echo \"$line\" | cut -f1); printf '%s' \"$id\" | cliphist decode > /tmp/cliphist-preview-$id.png 2>/dev/null; done; cliphist list"]
+    stdout: SplitParser {
+      onRead: data => {
+        var idx = data.indexOf("\t")
+        if (idx < 0) return
+        var id = data.substring(0, idx).trim()
+        var text = data.substring(idx + 1).trim()
+        var isImage = text.includes("binary data")
+        var e = root.entries.slice()
+        e.push({
+          id: id,
+          text: text,
+          imagePath: isImage ? "file:///tmp/cliphist-preview-" + id + ".png" : ""
+        })
+        root.entries = e
+      }
+    }
+  }
+
+  Process {
+    id: copyProc
+    command: ["bash", "-c", "echo hi | cliphist decode | wl-copy"]
+  }
+
+  Process {
+    id: delProc
+    command: ["bash", "-c", "echo hi | cliphist delete"]
+  }
+
+  Process {
+    id: notifyProc
+    command: ["notify-send", "-a", "Clipboard", "Copied to clipboard"]
+  }
+
+  Process {
+    id: wipeProc
+    command: ["cliphist", "wipe"]
+    onRunningChanged: { if (!running) root.loadEntries() }
   }
 
   Timer {
-    id: refreshTimer
-    interval: 2000
+    interval: 3000
     running: root.visible
     repeat: true
-    onTriggered: {
-      if (root.visible) root.refreshClipboard()
-    }
-  }
-
-  Process {
-    id: clipboardListProc
-    command: ["cliphist", "list"]
-    stdout: SplitParser {
-      onRead: data => {
-        const parts = data.split("\t")
-        if (parts.length >= 2) {
-          const entries = root.clipboardEntries.slice()
-          entries.push({ id: parts[0].trim(), text: parts.slice(1).join("\t").trim() })
-          root.clipboardEntries = entries
-        }
-      }
-    }
-    onRunningChanged: {
-      if (running) root.clipboardEntries = []
-    }
-  }
-
-  Process {
-    id: clipboardCopyProc
-    command: ["bash", "-c", ""]
-    stdout: SplitParser {
-      onRead: data => {}
-    }
-  }
-
-  Process {
-    id: clipboardDeleteProc
-    command: ["cliphist", "delete", ""]
-  }
-
-  Process {
-    id: clipboardClearProc
-    command: ["cliphist", "wipe"]
-    onRunningChanged: {
-      if (!running) root.refreshClipboard()
-    }
+    onTriggered: root.loadEntries()
   }
 
   MouseArea {
     anchors.fill: parent
     onClicked: root.visible = false
-
-    Rectangle {
-      anchors.fill: parent
-      color: theme.bgOverlay
-    }
+    Rectangle { anchors.fill: parent; color: theme.bgOverlay }
   }
 
   Rectangle {
     id: popupContent
     width: 400
-    height: Math.min(600, headerRow.height + searchField.height + separator.height + clipboardList.height + 32)
+    height: Math.min(600, headerCol.implicitHeight + 32)
     radius: 16
     color: theme.bgBase
     border.color: theme.bgBorder
@@ -130,215 +128,228 @@ PanelWindow {
     anchors.topMargin: 44
 
     ColumnLayout {
-      id: mainCol
+      id: headerCol
       anchors.fill: parent
       anchors.margins: 16
       spacing: 0
 
-      // Header row
+      // Header
       RowLayout {
-        id: headerRow
         Layout.fillWidth: true
         spacing: 8
 
         Text {
           text: "󰅗"
-          color: theme.accentPrimary
-          font.pixelSize: 16
+          color: theme.accentOrange
+          font.pixelSize: 18
           font.family: root.font
         }
 
         Text {
           text: "Clipboard"
-          color: theme.accentPrimary
+          color: theme.textPrimary
           font.pixelSize: 14
           font.family: root.font
           font.bold: true
           Layout.fillWidth: true
         }
 
-        // Clear all button
         Rectangle {
-          width: clearAllLabel.implicitWidth + 16
-          height: 28
-          radius: 6
-          color: clearAllArea.containsMouse ? theme.accentRed : "transparent"
-          border.color: theme.accentRed
-          border.width: 1
+          width: 28; height: 28; radius: 8
+          color: clearArea.containsMouse ? theme.bgHover : "transparent"
 
           Text {
-            id: clearAllLabel
             anchors.centerIn: parent
             text: "󰅖"
-            color: clearAllArea.containsMouse ? theme.bgBase : theme.accentRed
+            color: clearArea.containsMouse ? theme.accentRed : theme.textSecondary
             font.pixelSize: 14
             font.family: root.font
           }
 
           MouseArea {
-            id: clearAllArea
+            id: clearArea
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: clipboardClearProc.running = true
+            onClicked: wipeProc.running = true
           }
         }
       }
 
-      // Search field
+      // Search
       Rectangle {
-        id: searchField
         Layout.fillWidth: true
-        Layout.preferredHeight: 36
-        Layout.topMargin: 8
+        height: 32
         radius: 8
         color: theme.bgBase
-        border.color: searchInput.activeFocus ? theme.accentPrimary : theme.bgBorder
+        border.color: searchInput.activeFocus ? theme.accentOrange : theme.bgBorder
         border.width: 1
 
-        RowLayout {
+        TextInput {
+          id: searchInput
           anchors.fill: parent
-          anchors.leftMargin: 10
-          anchors.rightMargin: 10
-          spacing: 6
+          anchors.margins: 8
+          color: theme.textPrimary
+          font.pixelSize: 12
+          font.family: root.font
+          clip: true
+          onTextChanged: root.searchText = text
 
           Text {
-            text: "󰍉"
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Search..."
             color: theme.textMuted
-            font.pixelSize: 14
-            font.family: root.font
-          }
-
-          TextInput {
-            id: searchInput
-            Layout.fillWidth: true
-            color: theme.textPrimary
             font.pixelSize: 12
             font.family: root.font
-            clip: true
-            selectByMouse: true
-
-            onTextChanged: root.searchText = text
-
-            Text {
-              text: "Search clipboard..."
-              color: theme.textMuted
-              font.pixelSize: 12
-              font.family: root.font
-              visible: searchInput.text.length === 0 && !searchInput.activeFocus
-            }
+            visible: searchInput.text.length === 0 && !searchInput.activeFocus
           }
         }
       }
 
       // Separator
       Rectangle {
-        id: separator
         Layout.fillWidth: true
-        Layout.preferredHeight: 1
-        Layout.topMargin: 12
-        Layout.bottomMargin: 8
+        height: 1
         color: theme.bgBorder
+        Layout.topMargin: 12
+        Layout.bottomMargin: 12
       }
 
-      // Clipboard list
+      // List
       ListView {
-        id: clipboardList
+        id: clipList
         Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.preferredHeight: Math.min(root.filteredEntries.length * 42, 460)
+        Layout.preferredHeight: 400
         clip: true
-        spacing: 2
+        spacing: 4
         boundsBehavior: Flickable.StopAtBounds
 
         model: root.filteredEntries
 
         delegate: Rectangle {
-          id: entryDelegate
+          id: clipItem
           required property var modelData
           required property int index
 
-          width: clipboardList.width
-          height: 40
+          width: clipList.width
+          height: modelData.imagePath !== "" ? 72 : 40
           radius: 8
-          color: entryArea.containsMouse ? theme.bgHover : "transparent"
+          color: clipArea.containsMouse ? theme.bgHover : "transparent"
 
+          // Image preview
+          Image {
+            id: thumbImage
+            anchors.left: parent.left
+            anchors.leftMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            width: 48
+            height: 48
+            source: modelData.imagePath || ""
+            fillMode: Image.PreserveAspectFit
+            visible: modelData.imagePath !== "" && status === Image.Ready
+            asynchronous: true
+            cache: false
+          }
+
+          // Text entry
           RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 10
+            anchors.leftMargin: modelData.imagePath !== "" ? 68 : 12
             anchors.rightMargin: 8
             spacing: 8
+            visible: modelData.imagePath === ""
 
             Text {
-              text: modelData.id
-              color: theme.textMuted
-              font.pixelSize: 10
+              text: "󰅗"
+              color: theme.accentOrange
+              font.pixelSize: 14
               font.family: root.font
-              Layout.preferredWidth: 32
-              horizontalAlignment: Text.AlignRight
             }
 
             Text {
+              Layout.fillWidth: true
               text: modelData.text
               color: theme.textPrimary
               font.pixelSize: 12
               font.family: root.font
               elide: Text.ElideRight
+            }
+          }
+
+          // Image entry text overlay
+          ColumnLayout {
+            anchors.left: thumbImage.visible ? thumbImage.right : parent.left
+            anchors.leftMargin: thumbImage.visible ? 8 : 12
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+            visible: modelData.imagePath !== ""
+
+            Text {
               Layout.fillWidth: true
+              text: "Screenshot"
+              color: theme.textPrimary
+              font.pixelSize: 12
+              font.family: root.font
+              font.bold: true
+              elide: Text.ElideRight
             }
 
-            Rectangle {
-              width: 24
-              height: 24
-              radius: 6
-              color: deleteEntryArea.containsMouse ? theme.bgHover : "transparent"
+            Text {
+              Layout.fillWidth: true
+              text: modelData.text
+              color: theme.textMuted
+              font.pixelSize: 10
+              font.family: root.font
+              elide: Text.ElideRight
+            }
+          }
 
-              Text {
-                anchors.centerIn: parent
-                text: "󰅖"
-                color: theme.textSecondary
-                font.pixelSize: 12
-                font.family: root.font
-              }
+          // Delete button
+          Rectangle {
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            width: 24; height: 24; radius: 6
+            color: delArea.containsMouse ? theme.bgHover : "transparent"
+            visible: clipArea.containsMouse
 
-              MouseArea {
-                id: deleteEntryArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.deleteEntry(entryDelegate.modelData.id)
-              }
+            Text {
+              anchors.centerIn: parent
+              text: "󰅖"
+              color: theme.textMuted
+              font.pixelSize: 12
+              font.family: root.font
+            }
+
+            MouseArea {
+              id: delArea
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.deleteEntry(modelData.id)
             }
           }
 
           MouseArea {
-            id: entryArea
+            id: clipArea
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: root.copyEntry(entryDelegate.modelData.id)
+            onClicked: root.copyEntry(modelData.id, modelData.text)
           }
         }
 
-        // Empty state
         Text {
           anchors.centerIn: parent
-          text: "Clipboard is empty"
+          text: "  Clipboard is empty"
           color: theme.textMuted
           font.pixelSize: 13
           font.family: root.font
-          visible: clipboardList.count === 0
-        }
-
-        // Scrollbar
-        Rectangle {
-          anchors.right: parent.right
-          anchors.top: parent.top
-          anchors.bottom: parent.bottom
-          width: 4
-          radius: 2
-          color: theme.bgBorder
-          visible: clipboardList.contentHeight > clipboardList.height
+          visible: clipList.count === 0
         }
       }
     }

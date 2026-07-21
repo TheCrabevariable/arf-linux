@@ -3,11 +3,13 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
+import Quickshell.Io
 
 Singleton {
     id: root
 
     property list<var> notifications: []
+    property list<var> history: []
     property bool doNotDisturb: false
     readonly property int count: notifications.length
     property int _seqCounter: 0
@@ -54,20 +56,40 @@ Singleton {
 
             root.notifications = [data, ...root.notifications];
 
+            root.history = [{ seqId: data.seqId, summary: data.summary, body: data.body, appName: data.appName, appIcon: data.appIcon }, ...root.history]
+
+            if (root.history.length > 50) root.history = root.history.slice(0, 50)
+
+            root._writeFile()
+
             if (root.notifications.length > 5) {
                 root.notifications[root.notifications.length - 1].dismiss();
             }
         }
     }
 
+    onNotificationsChanged: _writeFile()
+
+    function _writeFile() {
+        _writeProc.command = ["bash", "-c", "cat > /tmp/quickshell-notifs.json << 'JSONEOF'\n" + JSON.stringify(root.history) + "\nJSONEOF"]
+        _writeProc.running = true
+    }
+
+    Process {
+        id: _writeProc
+        running: false
+    }
+
     function _remove(notifData): void {
         root.notifications = root.notifications.filter(function(n) {
             return n !== notifData;
         });
+        root._writeFile()
     }
 
     function dismiss(notifData): void {
         if (notifData) notifData.dismiss();
+        root._writeFile()
     }
 
     function dismissAll(): void {
@@ -80,5 +102,6 @@ Singleton {
                 n.destroy();
             }
         }
+        root._writeFile()
     }
 }
