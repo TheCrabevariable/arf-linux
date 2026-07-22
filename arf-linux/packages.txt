@@ -10,6 +10,7 @@ zed
 steam
 kitty
 fastfetch
+chafa
 rmpc
 mpd
 mpd-mpris
