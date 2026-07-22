@@ -103,7 +103,7 @@ Singleton {
   // Power Profile
   Process {
     id: powerProfileProc
-    command: ["sh", "-c", "powerprofilesctl get 2>/dev/null || echo 'balanced'"]
+    command: ["sh", "-c", "busctl get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile 2>/dev/null | cut -d'\"' -f2 || echo 'balanced'"]
     running: true
 
     stdout: StdioCollector {
