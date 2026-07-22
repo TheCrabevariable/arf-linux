@@ -9,6 +9,7 @@ if f then
   end
 end
 
+-- Autostart
 hl.on("hyprland.start", function()
   -- Also apply on fresh startup (Wayland socket is ready here)
   local mons2 = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
@@ -20,9 +21,12 @@ hl.on("hyprland.start", function()
   hl.exec_cmd("qs")
   hl.exec_cmd("hypridle")
   hl.exec_cmd("systemctl --user start hyprpolkitagent")
-  hl.exec_cmd("hyprctl setcursor breeze_cursors 24")
+  hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY DISPLAY")
+  hl.exec_cmd("systemctl --user start opentabletdriver")
+  hl.exec_cmd("hyprctl setcursor breeze 24")
   hl.exec_cmd("hyprpaper")
   hl.exec_cmd("udiskie -t")
+  hl.exec_cmd("wl-paste -t image/png --watch cliphist store")
   -- Input config (hl.config uses native Lua — no legacy parser needed)
   hl.config({
     input = {
@@ -39,9 +43,9 @@ hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("PATH", os.getenv("PATH") .. ":" .. os.getenv("HOME") .. "/.local/bin")
 hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
-hl.env("XCURSOR_THEME", "breeze_cursors")
+hl.env("XCURSOR_THEME", "breeze")
 hl.env("XCURSOR_SIZE", "24")
-hl.env("HYPRCURSOR_THEME", "breeze_cursors")
+hl.env("HYPRCURSOR_THEME", "breeze")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_NO_ANIMATION", "1")
 hl.env("TERMINAL", "kitty")
@@ -79,6 +83,7 @@ hl.config({
     force_default_wallpaper = -1,
     disable_hyprland_logo = true,
     mouse_move_focuses_monitor = true,
+    vrr = 1,
   },
 
 })

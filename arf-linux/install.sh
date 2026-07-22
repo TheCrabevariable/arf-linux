@@ -91,11 +91,11 @@ stage2() {
   # Official packages
   OFFICIAL=(
     hyprland hypridle hyprlock hyprpaper hyprshot hyprpolkitagent hyprpicker
-    zed steam kitty fastfetch rmpc mpd networkmanager zsh python
+    zed steam kitty fastfetch rmpc mpd mpd-mpris networkmanager zsh python
     quickshell ttf-hack-nerd ttf-nerd-fonts-symbols noto-fonts-emoji sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg opencode gnome-disk-utility imv mpv pavucontrol yt-dlp
-    bluetui bluez bluez-utils playerctl brightnessctl lm_sensors breeze-cursors
+    bluetui bluez bluez-utils playerctl brightnessctl lm_sensors breeze-cursors cliphist
     pipewire pipewire-pulse wireplumber power-profiles-daemon inotify-tools rsync
-    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar grub-btrfs flatpak flatpak-xdg-utils
+    xdg-desktop-portal xdg-desktop-portal-hyprland udiskie wlr-randr bazaar grub-btrfs flatpak flatpak-xdg-utils gvfs udisks2 btop xdg-user-dirs libreoffice-fresh
   )
 
   pacman -S --noconfirm --needed "${OFFICIAL[@]}" os-prober
@@ -148,7 +148,10 @@ stage2() {
     ln -sf /usr/lib/systemd/user/wireplumber.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/xdg-desktop-portal-hyprland.service ~/.config/systemd/user/default.target.wants/
     ln -sf /usr/lib/systemd/user/mpd-mpris.service ~/.config/systemd/user/default.target.wants/
-  "  
+  "
+
+  # Enable mpd
+  systemctl enable mpd 2>/dev/null || true  
 
   # ── Dotfiles ──────────────────────────────────────────────────
   info "Applying dotfiles..."
@@ -161,6 +164,7 @@ stage2() {
     app="$(basename "$dir")"
     case "$app" in
       quickshell-patch|dunst) continue ;;
+      quickshell-full) app="quickshell" ;;
     esac
     target="$USER_HOME/.config/$app"
     mkdir -p "$target"
@@ -213,9 +217,9 @@ stage2() {
   if [ "$SDDM_THEME" = "sddm-flower-theme" ]; then
     # Apply Tokyo Night colors (always, regardless of wallpaper)
     sudo sed -i \
-      's/^MainColor=.*/MainColor="#c0caf5"/' \
-      's/^AccentColor=.*/AccentColor="#7aa2f7"/' \
-      's/^BackgroundColor=.*/BackgroundColor="#1a1b26"/' \
+      -e 's/^MainColor=.*/MainColor="#c0caf5"/' \
+      -e 's/^AccentColor=.*/AccentColor="#7aa2f7"/' \
+      -e 's/^BackgroundColor=.*/BackgroundColor="#1a1b26"/' \
       /usr/share/sddm/themes/sddm-flower-theme/theme.conf 2>/dev/null || true
     # Copy wallpaper if available
     if [ -f /usr/share/sddm/themes/arf/background.jpg ]; then
