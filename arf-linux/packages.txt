@@ -47,6 +47,7 @@ os-prober
 bazaar
 grub-btrfs
 libreoffice-fresh
+vesktop
 cliphist
 xdg-user-dirs
 flatpak

@@ -1,6 +1,6 @@
 {
   "logo": {
-    "type": "kitty",
+    "type": "chafa",
     "source": "~/.config/fastfetch/fren.png",
     "height": 8,
     "color": {
